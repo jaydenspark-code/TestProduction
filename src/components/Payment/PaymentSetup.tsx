@@ -23,9 +23,25 @@ const PaymentSetup: React.FC = () => {
   };
 
   useEffect(() => {
-    // Remove all API calls - just set mock data
-    console.log('🧪 TESTING MODE: Using mock payment data');
-    setLoading(false);
+    // Check if we're in testing mode
+    if (!supabase) {
+      console.log('🧪 TESTING MODE: Using mock payment data');
+      setLoading(false);
+      return;
+    }
+
+    // In production, you would fetch real payment info here
+    const fetchPaymentInfo = async () => {
+      try {
+        // This would be replaced with actual payment service integration
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching payment info:', error);
+        setLoading(false);
+      }
+    };
+
+    fetchPaymentInfo();
   }, [user?.currency]);
 
   const handlePayment = async () => {

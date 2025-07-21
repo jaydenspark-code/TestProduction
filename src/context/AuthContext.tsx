@@ -141,7 +141,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   const login = async (email: string, password: string): Promise<{ success: boolean, requires2FA?: boolean, error?: string }> => {
-    // Add null check for testing mode
+    // Check if we're in testing mode
     if (!supabase) {
       console.log('🧪 TESTING MODE: Login simulated');
       console.log('Login attempt for:', email);
@@ -154,7 +154,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         country: 'US',
         currency: 'USD',
         isVerified: true,
-        isPaidUser: false,
+        isPaidUser: true, // Set to true for testing
         referralCode: 'TEST123',
         role: 'user',
         isAdvertiser: false,

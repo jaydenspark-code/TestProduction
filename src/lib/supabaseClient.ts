@@ -1,14 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Completely disable current Supabase connection
-const TESTING_MODE = true;
+// Environment variables - will be populated when Supabase is connected
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_KEY;
 
-// Placeholder values for new project (to be updated later)
-const supabaseUrl = 'https://your-new-project.supabase.co';
-const supabaseAnonKey = 'your-new-anon-key';
-const supabaseServiceKey = 'your-new-service-key';
+// Check if we're in testing mode (no Supabase credentials)
+const TESTING_MODE = !supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('your-new-project');
 
-// All clients are null in testing mode
+// Create clients only if not in testing mode
 export const supabase = TESTING_MODE ? null : createClient(supabaseUrl, supabaseAnonKey);
 export const supabaseAdmin = TESTING_MODE ? null : createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
@@ -17,8 +17,23 @@ export const supabaseAdmin = TESTING_MODE ? null : createClient(supabaseUrl, sup
   }
 });
 
-// Mock functions for frontend testing
+// Connection test function
 export const testSupabaseConnection = async () => {
-  console.log('🧪 TESTING MODE: Supabase completely disconnected');
-  return false;
+  if (TESTING_MODE) {
+    console.log('🧪 TESTING MODE: Supabase not connected');
+    return false;
+  }
+
+  try {
+    const { data, error } = await supabase!.from('users').select('count').limit(1);
+    if (error) throw error;
+    console.log('✅ Supabase connection successful');
+    return true;
+  } catch (error) {
+    console.error('❌ Supabase connection failed:', error);
+    return false;
+  }
 };
+
+// Export testing mode status
+export { TESTING_MODE };
