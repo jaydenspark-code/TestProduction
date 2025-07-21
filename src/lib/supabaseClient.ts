@@ -5,12 +5,19 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_KEY;
 
-// Check if we're in testing mode (no Supabase credentials)
-const TESTING_MODE = !supabaseUrl || !supabaseAnonKey || supabaseUrl.includes('your-new-project');
+// Check if we're in testing mode (no Supabase credentials or placeholder values)
+const TESTING_MODE = !supabaseUrl || 
+                     !supabaseAnonKey || 
+                     supabaseUrl.includes('your-project') ||
+                     supabaseUrl.includes('your_supabase_project_url') ||
+                     supabaseAnonKey.includes('your-anon-key') ||
+                     supabaseAnonKey.includes('your_supabase_anon_key') ||
+                     supabaseUrl === 'https://your-project-id.supabase.co' ||
+                     supabaseAnonKey === 'your-anon-key-here';
 
-// Create clients only if not in testing mode
-export const supabase = TESTING_MODE ? null : createClient(supabaseUrl, supabaseAnonKey);
-export const supabaseAdmin = TESTING_MODE ? null : createClient(supabaseUrl, supabaseServiceKey, {
+// Create clients only if not in testing mode AND we have valid credentials
+export const supabase = TESTING_MODE ? null : createClient(supabaseUrl!, supabaseAnonKey!);
+export const supabaseAdmin = (TESTING_MODE || !supabaseServiceKey) ? null : createClient(supabaseUrl!, supabaseServiceKey!, {
   auth: {
     autoRefreshToken: false,
     persistSession: false
