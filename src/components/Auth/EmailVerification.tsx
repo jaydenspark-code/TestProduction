@@ -87,6 +87,12 @@ const EmailVerification: React.FC = () => {
       return;
     }
 
+    if (!supabase) {
+      console.log('🧪 TESTING MODE: Email resend simulated');
+      setResendSuccess(true);
+      setTimeout(() => setResendSuccess(false), 5000);
+      return;
+    }
     setResending(true);
     try {
       const { error } = await supabase.auth.resend({

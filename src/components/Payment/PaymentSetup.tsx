@@ -23,44 +23,58 @@ const PaymentSetup: React.FC = () => {
   };
 
   useEffect(() => {
-    // Check if we're in testing mode
-    if (!supabase) {
-      console.log('🧪 TESTING MODE: Using mock payment data');
-      setLoading(false);
-      return;
-    }
-
-    // In production, you would fetch real payment info here
-    const fetchPaymentInfo = async () => {
-      try {
-        // This would be replaced with actual payment service integration
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching payment info:', error);
-        setLoading(false);
-      }
-    };
-
-    fetchPaymentInfo();
+    // Remove all API calls - just set mock data
+    console.log('🧪 TESTING MODE: Using mock payment data');
+    setLoading(false);
   }, [user?.currency]);
 
   const handlePayment = async () => {
-    console.log('🧪 TESTING MODE: Payment simulation started');
     setError('');
     setProcessing(true);
-    
-    // Simulate payment processing delay
-    setTimeout(() => {
-      console.log('✅ Payment simulation completed successfully');
-      setProcessing(false);
+
+    // Check if we're in testing mode
+    if (!supabase) {
+      console.log('🧪 TESTING MODE: Payment simulation started');
       
-      // Update user to paid status
-      if (user) {
-        updateUser({ isPaidUser: true });
-        console.log('✅ User updated to paid status');
-        navigate('/dashboard');
+      // Simulate payment processing delay
+      setTimeout(() => {
+        console.log('✅ Payment simulation completed successfully');
+        setProcessing(false);
+        
+        // Update user to paid status
+        if (user) {
+          updateUser({ isPaidUser: true });
+          console.log('✅ User updated to paid status');
+          navigate('/dashboard');
+        }
+      }, 3000);
+      return;
+    }
+
+    try {
+      // In production, integrate with actual payment service (Paystack, Stripe, etc.)
+      // For now, simulate successful payment
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Update user payment status in database
+      const { error } = await supabase
+        .from('users')
+        .update({ is_paid: true })
+        .eq('id', user?.id);
+
+      if (error) {
+        throw error;
       }
-    }, 3000);
+
+      // Refresh user data
+      await refreshUser();
+      navigate('/dashboard');
+    } catch (error: any) {
+      console.error('Payment error:', error);
+      setError(error.message || 'Payment failed. Please try again.');
+    } finally {
+      setProcessing(false);
+    }
   };
 
   const formatDualCurrency = (amount: number, currency: string) => {
