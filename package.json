@@ -5,11 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build --mode production",
+    "build": "tsc && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
     "test:register": "vite-node scripts/test-register.js",
-    "test:connection": "vite-node scripts/test-connection.js"
+    "test:connection": "vite-node scripts/test-connection.js",
+    "vercel-build": "npm run build"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.50.4",

@@ -209,35 +209,90 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const register = async (userData: Partial<User> & { password: string }): Promise<{ success: boolean; error?: string }> => {
-    // Complete frontend simulation
-    console.log('🧪 TESTING MODE: Registration simulated');
-    console.log('Registration data:', { ...userData, password: '[HIDDEN]' });
-    
-    // Simulate successful registration
-    const mockUser: User = {
-      id: Math.random().toString(36).substr(2, 9),
-      email: userData.email || '',
-      fullName: userData.fullName || 'Test User',
-      country: userData.country || 'US',
-      currency: userData.currency || 'USD',
-      isVerified: false, // Start as unverified
-      isPaidUser: false,
-      referralCode: Math.random().toString(36).substr(2, 8).toUpperCase(),
-      role: 'user',
-      isAdvertiser: false,
-      isAgent: false,
-      createdAt: new Date().toISOString(),
-    };
-    
-    setUser(mockUser);
-    
-    // Simulate email verification needed
-    setTimeout(() => {
-      console.log('🧪 TESTING MODE: Email verification simulated');
-      setUser(prev => prev ? { ...prev, isVerified: true } : null);
-    }, 2000);
-    
-    return { success: true };
+    // Check if we're in testing mode
+    if (!supabase) {
+      console.log('🧪 TESTING MODE: Registration simulated');
+      console.log('Registration data:', { ...userData, password: '[HIDDEN]' });
+      
+      // Simulate successful registration
+      const mockUser: User = {
+        id: Math.random().toString(36).substr(2, 9),
+        email: userData.email || '',
+        fullName: userData.fullName || 'Test User',
+        country: userData.country || 'US',
+        currency: userData.currency || 'USD',
+        isVerified: false, // Start as unverified
+        isPaidUser: false,
+        referralCode: Math.random().toString(36).substr(2, 8).toUpperCase(),
+        role: 'user',
+        isAdvertiser: false,
+        isAgent: false,
+        createdAt: new Date().toISOString(),
+      };
+      
+      setUser(mockUser);
+      return { success: true };
+    }
+
+    try {
+      console.log('Attempting registration for:', userData.email);
+      
+      // Generate referral code
+      const referralCode = Math.random().toString(36).substr(2, 8).toUpperCase();
+      
+      const { data, error } = await supabase.auth.signUp({
+        email: userData.email!,
+        password: userData.password,
+        options: {
+          data: {
+            full_name: userData.fullName,
+            country: userData.country,
+            currency: userData.currency,
+            referral_code: referralCode,
+            referred_by: userData.referredBy || null,
+          }
+        }
+      });
+
+      if (error) {
+        console.error('Supabase registration error:', error);
+        return { success: false, error: error.message };
+      }
+
+      if (data.user) {
+        console.log('Registration successful, user created:', data.user.id);
+        
+        // Create user profile in public users table
+        const { error: profileError } = await supabase
+          .from('users')
+          .insert([
+            {
+              id: data.user.id,
+              email: userData.email,
+              full_name: userData.fullName,
+              country: userData.country,
+              currency: userData.currency,
+              referral_code: referralCode,
+              referred_by: userData.referredBy || null,
+              role: 'user',
+              is_verified: false,
+              is_paid: false,
+            }
+          ]);
+
+        if (profileError) {
+          console.error('Error creating user profile:', profileError);
+          return { success: false, error: 'Failed to create user profile' };
+        }
+
+        return { success: true };
+      }
+
+      return { success: false, error: 'Registration failed: No user data returned' };
+    } catch (error: any) {
+      console.error('Unexpected registration error:', error);
+      return { success: false, error: 'An unexpected error occurred during registration' };
+    }
   };
 
   const logout = async () => {

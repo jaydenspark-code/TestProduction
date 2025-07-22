@@ -3,7 +3,6 @@ import { createClient } from '@supabase/supabase-js';
 // Environment variables - will be populated when Supabase is connected
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const supabaseServiceKey = import.meta.env.VITE_SUPABASE_SERVICE_KEY;
 
 // Check if we're in testing mode (no Supabase credentials or placeholder values)
 const TESTING_MODE = !supabaseUrl || 
@@ -15,19 +14,19 @@ const TESTING_MODE = !supabaseUrl ||
                      supabaseUrl === 'https://your-project-id.supabase.co' ||
                      supabaseAnonKey === 'your-anon-key-here';
 
+console.log('🔧 Supabase Configuration Status:', {
+  hasUrl: !!supabaseUrl,
+  hasKey: !!supabaseAnonKey,
+  testingMode: TESTING_MODE,
+  url: TESTING_MODE ? 'TESTING_MODE' : supabaseUrl?.substring(0, 30) + '...'
+});
 // Create clients only if not in testing mode AND we have valid credentials
 export const supabase = TESTING_MODE ? null : createClient(supabaseUrl!, supabaseAnonKey!);
-export const supabaseAdmin = (TESTING_MODE || !supabaseServiceKey) ? null : createClient(supabaseUrl!, supabaseServiceKey!, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false
-  }
-});
 
 // Connection test function
 export const testSupabaseConnection = async () => {
   if (TESTING_MODE) {
-    console.log('🧪 TESTING MODE: Supabase not connected');
+    console.log('🧪 TESTING MODE: Supabase not connected - using mock data');
     return false;
   }
 

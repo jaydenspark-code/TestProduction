@@ -52,22 +52,30 @@ const PaymentSetup: React.FC = () => {
     }
 
     try {
-      // In production, integrate with actual payment service (Paystack, Stripe, etc.)
+      // Initialize Paystack payment
+      const reference = `EPRO-${user?.id}-${Date.now()}`;
+      
+      // In a real implementation, you would redirect to Paystack
       // For now, simulate successful payment
+      console.log('Initializing payment with reference:', reference);
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       // Update user payment status in database
       const { error } = await supabase
         .from('users')
-        .update({ is_paid: true })
+        .update({ 
+          is_paid: true,
+          balance: 3.00, // Welcome bonus
+          total_earned: 3.00
+        })
         .eq('id', user?.id);
 
       if (error) {
         throw error;
       }
 
-      // Refresh user data
-      await refreshUser();
+      // Update user in context
+      updateUser({ isPaidUser: true });
       navigate('/dashboard');
     } catch (error: any) {
       console.error('Payment error:', error);

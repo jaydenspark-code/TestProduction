@@ -61,7 +61,6 @@ const Register: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    setSuccess(false);
 
     console.log('🚀 Starting registration process...');
 
@@ -100,10 +99,9 @@ const Register: React.FC = () => {
       console.log('📋 Result.success:', result.success);
       console.log('📋 Result.error:', result.error);
 
+        setSuccess(true);
       if (result.success) {
         console.log('✅ Registration successful, redirecting to verify-email');
-        // Don't set success state, just redirect
-        navigate('/verify-email');
       } else {
         setError(result.error || 'Registration failed. Please try again.');
       }
