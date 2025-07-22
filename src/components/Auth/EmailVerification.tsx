@@ -39,14 +39,14 @@ const EmailVerification: React.FC = () => {
       if (error) throw error;
 
       if (data.user) {
-        // Update verification status
+            navigate('/payment');
         const { error: updateError } = await supabase
           .from('users')
-          .update({ is_verified: true })
+            navigate('/login?error=no_session');
           .eq('id', data.user.id);
 
         if (updateError) {
-          console.error('Error updating verification status:', updateError);
+          navigate('/login?error=unexpected_error');
         }
 
         await refreshUser();

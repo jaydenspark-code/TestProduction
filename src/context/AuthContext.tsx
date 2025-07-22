@@ -276,7 +276,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               referred_by: userData.referredBy || null,
               role: 'user',
               is_verified: false,
-              is_paid: false,
+              is_paid: false
             }
           ]);
 
@@ -285,6 +285,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           return { success: false, error: 'Failed to create user profile' };
         }
 
+        console.log('User profile created successfully');
         return { success: true };
       }
 

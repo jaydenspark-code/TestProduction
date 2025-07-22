@@ -186,7 +186,7 @@ function App() {
                       }
                     />
                     <Route path="/payment/success" element={<PaymentSuccess />} />
-                    <Route path="/payment/verify" element={<PaymentSuccess />} />
+                    <Route path="/payment/callback" element={<PaymentSuccess />} />
                   </Routes>
                 </main>
                 <Footer />
