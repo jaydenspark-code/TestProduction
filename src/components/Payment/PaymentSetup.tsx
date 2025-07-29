@@ -1,19 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { useTheme } from '../../context/ThemeContext';
-import { CreditCard, Check, AlertCircle, DollarSign, Loader } from 'lucide-react';
-import { formatDualCurrency } from '../../utils/currency';
+import { useAuth } from '@context/AuthContext';
+import { useTheme } from '@context/ThemeContext';
+import { CreditCard, CheckCircle, AlertCircle, DollarSign, Check, Loader2 } from 'lucide-react';
+import { formatDualCurrency } from '@utils/currency';
+import { envConfig as environment } from '@config/environment';
+
+// PaymentGateway type definition
+type PaymentGateway = 'paystack' | 'stripe' | 'paypal' | 'crypto';
+
+// Simplified without Stripe for now to avoid message port errors
 
 const PaymentSetup: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
   const { user, refreshUser } = useAuth();
   const { theme } = useTheme();
   const navigate = useNavigate();
 
   const BASE_ACTIVATION_FEE = 15.00;
+  const [selectedGateway, setSelectedGateway] = useState<PaymentGateway>('paypal');
+  const [availableGateways] = useState<PaymentGateway[]>(['paypal', 'paystack']);
+  const [step, setStep] = useState<'select' | 'payment' | 'processing'>('select');
 
   // Redirect if user is already paid
   useEffect(() => {
@@ -22,7 +32,45 @@ const PaymentSetup: React.FC = () => {
     }
   }, [user?.isPaidUser, navigate]);
 
-  const handlePayment = async () => {
+  const handlePayPalPayment = async () => {
+    if (!user) {
+      setError('User not found. Please log in again.');
+      return;
+    }
+
+    setError('');
+    setProcessing(true);
+
+    try {
+      const response = await fetch(`${environment.supabase.url}/functions/v1/paypal-create-order`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${environment.supabase.anonKey}`,
+        },
+        body: JSON.stringify({
+          amount: BASE_ACTIVATION_FEE,
+          user_id: user.id,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create PayPal order');
+      }
+
+      // Redirect to PayPal
+      window.location.href = data.approvalUrl;
+
+    } catch (err) {
+      console.error('PayPal payment error:', err);
+      setError(err.message || 'Failed to process PayPal payment');
+      setProcessing(false);
+    }
+  };
+
+  const handlePaystackPayment = async () => {
     if (!user) {
       setError('User not found. Please log in again.');
       return;
@@ -37,7 +85,7 @@ const PaymentSetup: React.FC = () => {
       
       // Initialize Paystack payment
       const handler = (window as any).PaystackPop.setup({
-        key: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY || 'pk_test_a2d30b8bcd09fd282b564a3530da7e500522d523',
+        key: environment.paystack.publicKey,
         email: user.email,
         amount: BASE_ACTIVATION_FEE * 100, // Convert to kobo
         currency: 'USD',
@@ -47,7 +95,7 @@ const PaymentSetup: React.FC = () => {
           
           try {
             // Confirm payment with backend
-            const confirmResponse = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/paystack-confirm`, {
+            const confirmResponse = await fetch(`${environment.supabase.url}/functions/v1/paystack-confirm`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
@@ -62,12 +110,18 @@ const PaymentSetup: React.FC = () => {
             const result = await confirmResponse.json();
             
             if (result.success) {
+              console.log('✅ Payment confirmed by backend');
+              
               // Refresh user data to get updated payment status
               await refreshUser();
               
-              // Show success message briefly then redirect
-              setProcessing(false);
-              navigate('/dashboard');
+              // Wait a bit longer to ensure state is fully updated
+              setTimeout(async () => {
+                // Double-check user state is updated
+                await refreshUser();
+                setProcessing(false);
+                navigate('/dashboard', { replace: true });
+              }, 1500);
             } else {
               throw new Error(result.error || 'Payment confirmation failed');
             }
@@ -128,7 +182,33 @@ const PaymentSetup: React.FC = () => {
           </div>
 
           <div className="space-y-6">
-            <div className={`${theme === 'professional' ? 'bg-gray-700/30' : 'bg-white/5'} rounded-lg p-6 border ${theme === 'professional' ? 'border-gray-600/30' : 'border-white/10'}`}>
+              <div className={`${theme === 'professional' ? 'bg-gray-700/30' : 'bg-white/5'} rounded-lg p-6 border ${theme === 'professional' ? 'border-gray-600/30' : 'border-white/10'}`}>
+                <h3 className="text-white font-medium mb-4">Select Payment Method</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  {availableGateways.map((gateway) => (
+                    <button
+                      key={gateway}
+                      onClick={() => setSelectedGateway(gateway)}
+                      className={`${selectedGateway === gateway 
+                        ? theme === 'professional' 
+                          ? 'bg-cyan-500/20 border-cyan-500/50' 
+                          : 'bg-purple-500/20 border-purple-500/50'
+                        : theme === 'professional'
+                          ? 'bg-gray-800/50 border-gray-600/30 hover:bg-gray-700/30'
+                          : 'bg-white/5 border-white/10 hover:bg-white/10'
+                      } p-4 rounded-lg border transition-all duration-200 flex flex-col items-center justify-center space-y-2`}
+                    >
+                      <img 
+                        src={`/images/${gateway}-logo.svg`} 
+                        alt={`${gateway} logo`} 
+                        className="h-8 w-auto" 
+                      />
+                      <span className="text-white capitalize">{gateway}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className={`${theme === 'professional' ? 'bg-gray-700/30' : 'bg-white/5'} rounded-lg p-6 border ${theme === 'professional' ? 'border-gray-600/30' : 'border-white/10'}`}>
               <h3 className="text-white font-medium mb-4 flex items-center">
                 <DollarSign className="w-5 h-5 mr-2" />
                 Activation Fee
@@ -191,13 +271,13 @@ const PaymentSetup: React.FC = () => {
             )}
 
             <button
-              onClick={handlePayment}
+              onClick={selectedGateway === 'paypal' ? handlePayPalPayment : handlePaystackPayment}
               disabled={processing}
               className={`w-full ${buttonPrimaryClass} text-white py-3 rounded-lg font-medium focus:outline-none focus:ring-2 ${theme === 'professional' ? 'focus:ring-cyan-500' : 'focus:ring-purple-500'} focus:ring-offset-2 focus:ring-offset-transparent transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2`}
             >
               {processing ? (
                 <>
-                  <Loader className="w-5 h-5 animate-spin" />
+                  <Loader2 className="w-5 h-5 animate-spin" />
                   <span>Processing Payment...</span>
                 </>
               ) : (

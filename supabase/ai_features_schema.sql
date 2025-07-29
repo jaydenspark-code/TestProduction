@@ -1,0 +1,570 @@
+-- =============================================================================
+-- AI FEATURES SCHEMA EXTENSION FOR EARNPRO
+-- =============================================================================
+-- This file extends the base schema with tables for AI-powered features
+-- Run this after the main schema.sql file
+
+-- Create additional enum types for AI features
+CREATE TYPE notification_frequency AS ENUM ('immediate', 'daily', 'weekly', 'never');
+CREATE TYPE communication_style AS ENUM ('formal', 'casual', 'friendly', 'professional');
+CREATE TYPE activity_level AS ENUM ('low', 'medium', 'high');
+CREATE TYPE user_pattern AS ENUM ('high_value', 'churning', 'growing', 'dormant');
+CREATE TYPE color_scheme AS ENUM ('light', 'dark', 'auto');
+CREATE TYPE match_status AS ENUM ('pending', 'active', 'completed', 'failed');
+CREATE TYPE insight_type AS ENUM ('revenue', 'users', 'conversions', 'engagement');
+CREATE TYPE anomaly_severity AS ENUM ('low', 'medium', 'high');
+
+-- =============================================================================
+-- PERSONALIZATION TABLES
+-- =============================================================================
+
+-- User personalization profiles
+CREATE TABLE user_personalization_profiles (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    preferences JSONB NOT NULL DEFAULT '{
+        "contentTypes": ["tips", "case_studies", "tutorials"],
+        "communicationStyle": "professional",
+        "notificationFrequency": "daily",
+        "targetAudience": [],
+        "industries": [],
+        "roles": []
+    }',
+    behavior JSONB NOT NULL DEFAULT '{
+        "loginFrequency": 0,
+        "averageSessionDuration": 0,
+        "mostActiveTimeOfDay": "09:00",
+        "preferredDevices": ["desktop"],
+        "engagementScore": 0
+    }',
+    performance JSONB NOT NULL DEFAULT '{
+        "totalReferrals": 0,
+        "successfulReferrals": 0,
+        "conversionRate": 0,
+        "averageEarnings": 0,
+        "topPerformingCampaigns": []
+    }',
+    ai_insights JSONB NOT NULL DEFAULT '{
+        "personalityType": "Balanced",
+        "motivationFactors": ["earnings", "recognition"],
+        "optimalApproachStrategy": "supportive",
+        "predictedChurnRisk": 0,
+        "growthPotential": 50
+    }',
+    customization JSONB NOT NULL DEFAULT '{
+        "dashboardLayout": {},
+        "widgetPreferences": ["stats", "recent_activity", "recommendations"],
+        "colorScheme": "light",
+        "language": "en",
+        "timezone": "UTC"
+    }',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(user_id)
+);
+
+-- User behavior logs for AI analysis
+CREATE TABLE user_behavior_logs (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    action VARCHAR(100) NOT NULL,
+    page_url TEXT,
+    session_id UUID,
+    device_info JSONB,
+    location_info JSONB,
+    timestamp TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    metadata JSONB DEFAULT '{}'
+);
+
+-- Content library for personalized recommendations
+CREATE TABLE content_library (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title VARCHAR(255) NOT NULL,
+    type VARCHAR(50) NOT NULL, -- 'tip', 'article', 'tutorial', 'case_study'
+    content TEXT NOT NULL,
+    summary TEXT,
+    tags TEXT[],
+    industry VARCHAR(100),
+    role VARCHAR(100),
+    difficulty_level INTEGER DEFAULT 1, -- 1-5 scale
+    estimated_read_time INTEGER, -- in minutes
+    engagement_score DECIMAL(3,2) DEFAULT 0.0,
+    view_count INTEGER DEFAULT 0,
+    like_count INTEGER DEFAULT 0,
+    share_count INTEGER DEFAULT 0,
+    created_by UUID REFERENCES users(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- =============================================================================
+-- SMART MATCHING TABLES
+-- =============================================================================
+
+-- User profiles for smart matching
+CREATE TABLE user_matching_profiles (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    demographics JSONB NOT NULL DEFAULT '{
+        "age": null,
+        "location": "",
+        "interests": [],
+        "occupation": null
+    }',
+    behavior JSONB NOT NULL DEFAULT '{
+        "activityLevel": "medium",
+        "preferredTime": "09:00",
+        "socialPlatforms": ["facebook"],
+        "conversionHistory": 0.1
+    }',
+    performance JSONB NOT NULL DEFAULT '{
+        "totalEarnings": 0,
+        "referralCount": 0,
+        "successRate": 0.5,
+        "averageConversion": 0.1
+    }',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(user_id)
+);
+
+-- Referral matches generated by AI
+CREATE TABLE referral_matches (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    referrer_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    referee_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    compatibility_score DECIMAL(3,2) NOT NULL,
+    match_reasons TEXT[] NOT NULL,
+    recommended_approach TEXT NOT NULL,
+    expected_conversion DECIMAL(3,2) NOT NULL,
+    actual_conversion DECIMAL(3,2),
+    status match_status DEFAULT 'pending',
+    outcome_notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Campaign optimization data
+CREATE TABLE campaign_optimizations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    campaign_id UUID NOT NULL REFERENCES campaigns(id) ON DELETE CASCADE,
+    target_segment VARCHAR(100) NOT NULL,
+    best_channels TEXT[] NOT NULL,
+    optimal_timing VARCHAR(100) NOT NULL,
+    content_suggestions TEXT[] NOT NULL,
+    budget_allocation JSONB NOT NULL,
+    performance_metrics JSONB DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- =============================================================================
+-- AI ANALYTICS TABLES
+-- =============================================================================
+
+-- AI predictions and insights
+CREATE TABLE ai_predictions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    type insight_type NOT NULL,
+    prediction_value DECIMAL(10,2) NOT NULL,
+    confidence_score DECIMAL(3,2) NOT NULL,
+    timeframe VARCHAR(50) NOT NULL,
+    recommendations TEXT[],
+    metadata JSONB DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    expires_at TIMESTAMP WITH TIME ZONE
+);
+
+-- User segments from AI clustering
+CREATE TABLE user_segments (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    segment_name VARCHAR(100) NOT NULL UNIQUE,
+    characteristics TEXT[] NOT NULL,
+    size INTEGER NOT NULL DEFAULT 0,
+    conversion_rate DECIMAL(3,2) NOT NULL DEFAULT 0.0,
+    average_revenue DECIMAL(10,2) NOT NULL DEFAULT 0.0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- User segment assignments
+CREATE TABLE user_segment_assignments (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    segment_id UUID NOT NULL REFERENCES user_segments(id) ON DELETE CASCADE,
+    confidence_score DECIMAL(3,2) NOT NULL,
+    assigned_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(user_id, segment_id)
+);
+
+-- Anomaly detection results
+CREATE TABLE anomaly_detections (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    metric_name VARCHAR(100) NOT NULL,
+    metric_value DECIMAL(10,2) NOT NULL,
+    expected_value DECIMAL(10,2) NOT NULL,
+    deviation_percentage DECIMAL(5,2) NOT NULL,
+    severity anomaly_severity NOT NULL,
+    description TEXT NOT NULL,
+    resolved BOOLEAN DEFAULT FALSE,
+    resolved_at TIMESTAMP WITH TIME ZONE,
+    resolved_by UUID REFERENCES users(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- User behavior patterns identified by AI
+CREATE TABLE user_behavior_patterns (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    pattern user_pattern NOT NULL,
+    confidence_score DECIMAL(3,2) NOT NULL,
+    indicators TEXT[] NOT NULL,
+    next_best_action TEXT NOT NULL,
+    action_taken BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- =============================================================================
+-- REAL-TIME & ANALYTICS TABLES
+-- =============================================================================
+
+-- Live events for real-time dashboard
+CREATE TABLE live_events (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    event_type VARCHAR(50) NOT NULL,
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    data JSONB NOT NULL DEFAULT '{}',
+    processed BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- AI metrics for performance tracking
+CREATE TABLE ai_metrics (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+    metric_type VARCHAR(50) NOT NULL,
+    metric_value DECIMAL(10,4) NOT NULL,
+    metadata JSONB DEFAULT '{}',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Model performance tracking
+CREATE TABLE ai_model_performance (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    model_name VARCHAR(100) NOT NULL,
+    model_version VARCHAR(50) NOT NULL,
+    accuracy_score DECIMAL(3,2),
+    precision_score DECIMAL(3,2),
+    recall_score DECIMAL(3,2),
+    f1_score DECIMAL(3,2),
+    training_data_size INTEGER,
+    last_trained_at TIMESTAMP WITH TIME ZONE,
+    performance_notes TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- User recommendations
+CREATE TABLE user_recommendations (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    recommendation_type VARCHAR(50) NOT NULL,
+    title VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    priority_score DECIMAL(3,2) NOT NULL DEFAULT 1.0,
+    metadata JSONB DEFAULT '{}',
+    viewed BOOLEAN DEFAULT FALSE,
+    clicked BOOLEAN DEFAULT FALSE,
+    dismissed BOOLEAN DEFAULT FALSE,
+    expires_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- =============================================================================
+-- INDEXES FOR PERFORMANCE
+-- =============================================================================
+
+-- Personalization indexes
+CREATE INDEX idx_user_personalization_profiles_user_id ON user_personalization_profiles(user_id);
+CREATE INDEX idx_user_behavior_logs_user_id ON user_behavior_logs(user_id);
+CREATE INDEX idx_user_behavior_logs_action ON user_behavior_logs(action);
+CREATE INDEX idx_user_behavior_logs_timestamp ON user_behavior_logs(timestamp);
+CREATE INDEX idx_content_library_type ON content_library(type);
+CREATE INDEX idx_content_library_industry ON content_library(industry);
+CREATE INDEX idx_content_library_tags ON content_library USING gin(tags);
+
+-- Smart matching indexes
+CREATE INDEX idx_user_matching_profiles_user_id ON user_matching_profiles(user_id);
+CREATE INDEX idx_referral_matches_referrer_id ON referral_matches(referrer_id);
+CREATE INDEX idx_referral_matches_referee_id ON referral_matches(referee_id);
+CREATE INDEX idx_referral_matches_status ON referral_matches(status);
+CREATE INDEX idx_referral_matches_compatibility_score ON referral_matches(compatibility_score);
+CREATE INDEX idx_campaign_optimizations_campaign_id ON campaign_optimizations(campaign_id);
+
+-- AI analytics indexes
+CREATE INDEX idx_ai_predictions_user_id ON ai_predictions(user_id);
+CREATE INDEX idx_ai_predictions_type ON ai_predictions(type);
+CREATE INDEX idx_ai_predictions_created_at ON ai_predictions(created_at);
+CREATE INDEX idx_user_segments_segment_name ON user_segments(segment_name);
+CREATE INDEX idx_user_segment_assignments_user_id ON user_segment_assignments(user_id);
+CREATE INDEX idx_user_segment_assignments_segment_id ON user_segment_assignments(segment_id);
+CREATE INDEX idx_anomaly_detections_severity ON anomaly_detections(severity);
+CREATE INDEX idx_anomaly_detections_resolved ON anomaly_detections(resolved);
+CREATE INDEX idx_user_behavior_patterns_user_id ON user_behavior_patterns(user_id);
+CREATE INDEX idx_user_behavior_patterns_pattern ON user_behavior_patterns(pattern);
+
+-- Real-time indexes
+CREATE INDEX idx_live_events_event_type ON live_events(event_type);
+CREATE INDEX idx_live_events_user_id ON live_events(user_id);
+CREATE INDEX idx_live_events_created_at ON live_events(created_at);
+CREATE INDEX idx_live_events_processed ON live_events(processed);
+CREATE INDEX idx_ai_metrics_user_id ON ai_metrics(user_id);
+CREATE INDEX idx_ai_metrics_metric_type ON ai_metrics(metric_type);
+CREATE INDEX idx_ai_metrics_created_at ON ai_metrics(created_at);
+CREATE INDEX idx_ai_model_performance_model_name ON ai_model_performance(model_name);
+CREATE INDEX idx_user_recommendations_user_id ON user_recommendations(user_id);
+CREATE INDEX idx_user_recommendations_type ON user_recommendations(recommendation_type);
+CREATE INDEX idx_user_recommendations_viewed ON user_recommendations(viewed);
+
+-- =============================================================================
+-- TRIGGERS FOR AUTOMATIC UPDATES
+-- =============================================================================
+
+-- Update triggers for timestamp fields
+CREATE TRIGGER update_user_personalization_profiles_updated_at 
+    BEFORE UPDATE ON user_personalization_profiles
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_content_library_updated_at 
+    BEFORE UPDATE ON content_library
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_user_matching_profiles_updated_at 
+    BEFORE UPDATE ON user_matching_profiles
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_referral_matches_updated_at 
+    BEFORE UPDATE ON referral_matches
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_campaign_optimizations_updated_at 
+    BEFORE UPDATE ON campaign_optimizations
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_user_segments_updated_at 
+    BEFORE UPDATE ON user_segments
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_user_behavior_patterns_updated_at 
+    BEFORE UPDATE ON user_behavior_patterns
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- =============================================================================
+-- FUNCTIONS FOR AI FEATURES
+-- =============================================================================
+
+-- Function to refresh AI models (placeholder)
+CREATE OR REPLACE FUNCTION refresh_ai_models()
+RETURNS TEXT AS $$
+BEGIN
+    -- This would typically trigger model retraining in a real implementation
+    -- For now, we'll just update a timestamp
+    INSERT INTO ai_metrics (metric_type, metric_value, metadata) 
+    VALUES ('model_refresh', 1, jsonb_build_object('refreshed_at', NOW()));
+    
+    RETURN 'AI models refresh initiated at ' || NOW();
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to calculate user engagement score
+CREATE OR REPLACE FUNCTION calculate_engagement_score(user_uuid UUID)
+RETURNS DECIMAL(3,2) AS $$
+DECLARE
+    login_frequency INTEGER;
+    transaction_count INTEGER;
+    referral_count INTEGER;
+    notification_interaction DECIMAL(3,2);
+    score DECIMAL(3,2);
+BEGIN
+    -- Get login frequency (last 30 days)
+    SELECT COUNT(*) INTO login_frequency
+    FROM user_behavior_logs 
+    WHERE user_id = user_uuid 
+    AND action = 'login' 
+    AND timestamp >= NOW() - INTERVAL '30 days';
+    
+    -- Get transaction activity
+    SELECT COUNT(*) INTO transaction_count
+    FROM transactions 
+    WHERE user_id = user_uuid 
+    AND created_at >= NOW() - INTERVAL '30 days';
+    
+    -- Get referral activity
+    SELECT COUNT(*) INTO referral_count
+    FROM referrals 
+    WHERE referrer_id = user_uuid 
+    AND created_at >= NOW() - INTERVAL '30 days';
+    
+    -- Calculate notification interaction rate (simplified)
+    SELECT COALESCE(
+        (COUNT(CASE WHEN is_read = true THEN 1 END)::DECIMAL / NULLIF(COUNT(*), 0)),
+        0
+    ) INTO notification_interaction
+    FROM notifications 
+    WHERE user_id = user_uuid 
+    AND created_at >= NOW() - INTERVAL '30 days';
+    
+    -- Calculate weighted engagement score (0-1 scale)
+    score := LEAST(1.0, (
+        (login_frequency * 0.3) + 
+        (transaction_count * 0.3) + 
+        (referral_count * 0.2) + 
+        (notification_interaction * 0.2)
+    ) / 10);
+    
+    RETURN score;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to get user segment
+CREATE OR REPLACE FUNCTION get_user_segment(user_uuid UUID)
+RETURNS TEXT AS $$
+DECLARE
+    user_segment TEXT;
+BEGIN
+    SELECT s.segment_name INTO user_segment
+    FROM user_segments s
+    JOIN user_segment_assignments usa ON s.id = usa.segment_id
+    WHERE usa.user_id = user_uuid
+    ORDER BY usa.confidence_score DESC
+    LIMIT 1;
+    
+    RETURN COALESCE(user_segment, 'unassigned');
+END;
+$$ LANGUAGE plpgsql;
+
+-- =============================================================================
+-- ROW LEVEL SECURITY POLICIES
+-- =============================================================================
+
+-- Enable RLS on all new tables
+ALTER TABLE user_personalization_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_behavior_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE content_library ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_matching_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE referral_matches ENABLE ROW LEVEL SECURITY;
+ALTER TABLE campaign_optimizations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ai_predictions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_segments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_segment_assignments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE anomaly_detections ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_behavior_patterns ENABLE ROW LEVEL SECURITY;
+ALTER TABLE live_events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ai_metrics ENABLE ROW LEVEL SECURITY;
+ALTER TABLE ai_model_performance ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_recommendations ENABLE ROW LEVEL SECURITY;
+
+-- Personalization policies
+CREATE POLICY "Users can view own personalization profile" ON user_personalization_profiles
+    FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own personalization profile" ON user_personalization_profiles
+    FOR ALL USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can view own behavior logs" ON user_behavior_logs
+    FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "System can insert behavior logs" ON user_behavior_logs
+    FOR INSERT WITH CHECK (true);
+
+-- Content library policies
+CREATE POLICY "Everyone can view content" ON content_library
+    FOR SELECT USING (true);
+
+CREATE POLICY "Admins can manage content" ON content_library
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM users 
+            WHERE users.id = auth.uid() 
+            AND users.role IN ('admin', 'superadmin')
+        )
+    );
+
+-- Smart matching policies
+CREATE POLICY "Users can view own matching profile" ON user_matching_profiles
+    FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own matching profile" ON user_matching_profiles
+    FOR ALL USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can view matches involving them" ON referral_matches
+    FOR SELECT USING (auth.uid() = referrer_id OR auth.uid() = referee_id);
+
+-- AI analytics policies
+CREATE POLICY "Users can view own predictions" ON ai_predictions
+    FOR SELECT USING (auth.uid() = user_id OR user_id IS NULL);
+
+CREATE POLICY "Users can view own recommendations" ON user_recommendations
+    FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own recommendations" ON user_recommendations
+    FOR UPDATE USING (auth.uid() = user_id);
+
+-- Admin policies for analytics
+CREATE POLICY "Admins can view all analytics" ON user_segments
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM users 
+            WHERE users.id = auth.uid() 
+            AND users.role IN ('admin', 'superadmin')
+        )
+    );
+
+CREATE POLICY "Admins can view anomalies" ON anomaly_detections
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM users 
+            WHERE users.id = auth.uid() 
+            AND users.role IN ('admin', 'superadmin')
+        )
+    );
+
+-- =============================================================================
+-- SAMPLE DATA FOR TESTING
+-- =============================================================================
+
+-- Insert sample user segments
+INSERT INTO user_segments (segment_name, characteristics, size, conversion_rate, average_revenue) VALUES
+('high-value', ARRAY['High earnings', 'Active referrers', 'Long tenure'], 0, 0.85, 150.00),
+('growing', ARRAY['Moderate earnings', 'Increasing activity', 'Recent joiners'], 0, 0.65, 75.00),
+('dormant', ARRAY['Low activity', 'Minimal earnings', 'Need re-engagement'], 0, 0.25, 25.00),
+('new-users', ARRAY['Recently joined', 'Exploring platform', 'High potential'], 0, 0.45, 35.00);
+
+-- Insert sample content
+INSERT INTO content_library (title, type, content, summary, tags, industry, role, difficulty_level) VALUES
+('Getting Started with Referrals', 'tutorial', 'Learn the basics of making successful referrals...', 'A beginner guide to referral marketing', ARRAY['basics', 'referrals', 'getting-started'], 'general', 'beginner', 1),
+('Advanced Referral Strategies', 'article', 'Discover advanced techniques for maximizing your referral income...', 'Pro tips for experienced referrers', ARRAY['advanced', 'strategies', 'income'], 'general', 'experienced', 4),
+('Social Media Best Practices', 'tip', 'Use these proven social media tactics to boost your referrals...', 'Quick tips for social media referrals', ARRAY['social-media', 'tips', 'marketing'], 'marketing', 'intermediate', 2);
+
+-- Insert sample AI model performance records
+INSERT INTO ai_model_performance (model_name, model_version, accuracy_score, precision_score, recall_score, f1_score) VALUES
+('revenue_prediction', '1.0.0', 0.85, 0.82, 0.88, 0.85),
+('churn_prediction', '1.0.0', 0.78, 0.75, 0.81, 0.78),
+('user_matching', '1.0.0', 0.72, 0.69, 0.76, 0.72);
+
+-- =============================================================================
+-- COMPLETION MESSAGE
+-- =============================================================================
+
+-- This completes the AI features schema extension
+-- The database now supports:
+-- ✅ User personalization and behavior tracking
+-- ✅ Smart matching and compatibility scoring  
+-- ✅ AI analytics and predictions
+-- ✅ Real-time events and notifications
+-- ✅ Content recommendation system
+-- ✅ Anomaly detection and monitoring
+-- ✅ Performance tracking and metrics
+
+SELECT 'AI Features Schema Extension Completed Successfully! 🎉' AS status;

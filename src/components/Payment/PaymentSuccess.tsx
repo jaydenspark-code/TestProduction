@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { CheckCircle, Loader, Gift } from 'lucide-react';
+import { loadStripe } from '@stripe/stripe-js';
 
 const PaymentSuccess: React.FC = () => {
   const navigate = useNavigate();
@@ -12,37 +13,83 @@ const PaymentSuccess: React.FC = () => {
   const [verifying, setVerifying] = useState(true);
   const [error, setError] = useState('');
 
+  const reference = searchParams.get('reference') || searchParams.get('trxref');
+  const paypalOrderId = searchParams.get('token'); // PayPal order ID
+
   useEffect(() => {
     const verifyPayment = async () => {
-      const reference = searchParams.get('reference');
-      const trxref = searchParams.get('trxref');
-      
-      const paymentRef = reference || trxref;
-      
-      if (paymentRef) {
-        try {
-          // Refresh user data to get updated payment status
+      if (!reference && !paypalOrderId && !searchParams.get('payment_intent')) {
+        setError('No payment reference found');
+        setVerifying(false);
+        return;
+      }
+
+      try {
+        let response;
+        
+        if (reference) {
+          // Verify Paystack payment
+          response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/paystack-confirm`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+            },
+            body: JSON.stringify({
+              reference,
+              userId: user?.id
+            })
+          });
+        } else if (paypalOrderId) {
+          // Verify PayPal payment
+          response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/paypal-capture-order`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+            },
+            body: JSON.stringify({
+              orderId: paypalOrderId,
+              userId: user?.id
+            })
+          });
+        } else if (searchParams.get('payment_intent')) {
+          // Verify Stripe payment
+          const stripe = await loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+          if (!stripe) {
+            throw new Error('Failed to load Stripe');
+          }
+
+          const clientSecret = searchParams.get('payment_intent_client_secret');
+          const { paymentIntent } = await stripe.retrievePaymentIntent(clientSecret);
+
+          if (paymentIntent.status !== 'succeeded') {
+            throw new Error('Payment was not successful');
+          }
+
           await refreshUser();
-          
-          // Small delay to ensure data is updated
-          setTimeout(() => {
-            setVerifying(false);
-            // Redirect to dashboard after showing success
-            setTimeout(() => navigate('/dashboard'), 2000);
-          }, 1000);
-        } catch (error) {
-          console.error('Error verifying payment:', error);
-          setError('Payment verification failed. Please contact support.');
+          setVerifying(false);
+          return;
+        }
+
+        const result = await response.json();
+        
+        if (result.success) {
+          await refreshUser();
+          setVerifying(false);
+        } else {
+          setError(result.error || 'Payment verification failed');
           setVerifying(false);
         }
-      } else {
-        setError('No payment reference found.');
+      } catch (error: any) {
+        console.error('Payment verification error:', error);
+        setError('Failed to verify payment');
         setVerifying(false);
       }
     };
 
     verifyPayment();
-  }, [searchParams, navigate, refreshUser]);
+  }, [reference, user?.id, refreshUser]);
 
   const bgClass = theme === 'professional'
     ? 'min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-800'

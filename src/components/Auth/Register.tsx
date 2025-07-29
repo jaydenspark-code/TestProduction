@@ -29,6 +29,29 @@ const Register: React.FC = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
+  // Add CSS for animations
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes fadeOut {
+        from { opacity: 1; transform: translateY(0); }
+        to { opacity: 0; transform: translateY(-10px); }
+      }
+      .animate-fade-in {
+        animation: fadeIn 0.3s ease-out forwards;
+      }
+      .animate-fade-out {
+        animation: fadeOut 0.3s ease-out forwards;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => document.head.removeChild(style);
+  }, []);
+
   const { register } = useAuth();
   const navigate = useNavigate();
 
@@ -59,30 +82,56 @@ const Register: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate form data
+    if (formData.password !== formData.confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
     setLoading(true);
     setError('');
+    setSuccess(false);
 
     console.log('🚀 Starting registration process...');
 
+    // Add detailed logging
+    console.log('📝 Form data:', {
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      username: formData.username,
+      email: formData.email,
+      country: formData.country,
+      phoneNumber: formData.phoneNumber,
+      referredBy: formData.referredBy
+    });
+
+    // Enhanced form validation
+    const validationErrors = [];
+    
+    if (!formData.firstName.trim() || !formData.lastName.trim()) {
+      validationErrors.push('Please enter your full name');
+    }
+    if (!formData.email.trim()) {
+      validationErrors.push('Please enter your email address');
+    }
+    if (!formData.password) {
+      validationErrors.push('Please enter a password');
+    } else if (formData.password.length < 8) {
+      validationErrors.push('Password must be at least 8 characters long');
+    }
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      setLoading(false);
-      return;
+      validationErrors.push('Passwords do not match');
     }
-
-    if (formData.password.length < 8) {
-      setError('Password must be at least 8 characters long');
-      setLoading(false);
-      return;
-    }
-
-    if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.username.trim()) {
-      setError('Please fill in all required fields');
+    
+    if (validationErrors.length > 0) {
+      setError(validationErrors.join('\n'));
       setLoading(false);
       return;
     }
 
     try {
+      setError('');
       console.log('📝 Preparing registration data...');
       const currency = getCountryCurrency(formData.country);
       const registrationData = {
@@ -92,25 +141,44 @@ const Register: React.FC = () => {
         role: 'user' as const
       };
 
-      console.log('📧 Calling register function...');
+      console.log('📧 Calling register function with data:', registrationData);
       const result = await register(registrationData);
-
       console.log('📋 Registration result:', result);
-      console.log('📋 Result.success:', result.success);
-      console.log('📋 Result.error:', result.error);
 
-        setSuccess(true);
       if (result.success) {
-        console.log('✅ Registration successful, redirecting to verify-email');
+        console.log('✅ Registration successful, preparing to redirect...');
+        setSuccess(true);
+        setLoading(false);
+        
+        // Show success message before redirecting
+        const successMessage = document.createElement('div');
+        successMessage.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 animate-fade-in';
+        successMessage.textContent = 'Account created successfully! Redirecting to verification...';
+        document.body.appendChild(successMessage);
+
+        // Add success message cleanup
+        setTimeout(() => {
+          document.body.removeChild(successMessage);
+          navigate('/verify-email');
+        }, 2000);
       } else {
+        console.error('❌ Registration failed:', result.error);
         setError(result.error || 'Registration failed. Please try again.');
+        setLoading(false);
+        // Scroll to error message
+        window.scrollTo({ top: 0, behavior: 'smooth' });
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('💥 Unexpected error during registration:', err);
-      setError('An unexpected error occurred. Please try again.');
+      const errorMessage = err?.message || 'An unexpected error occurred. Please try again.';
+      setError(errorMessage);
+      // Scroll to error message
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       console.log('🏁 Registration process completed, clearing loading state');
-      setLoading(false);
+      if (!success) {
+        setLoading(false);
+      }
     }
   };
 
@@ -191,6 +259,16 @@ const Register: React.FC = () => {
             ) : (
               // Show registration form when not successful
               <form onSubmit={handleSubmit} className="space-y-6">
+                {error && (
+                  <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-4 mb-6">
+                    <div className="flex items-center">
+                      <svg className="h-5 w-5 text-red-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <p className="text-red-500 text-sm font-medium">{error}</p>
+                    </div>
+                  </div>
+                )}
                 <div className="space-y-4">
                   {/* First Name and Last Name */}
                   <div className="grid grid-cols-2 gap-4">
@@ -403,9 +481,24 @@ const Register: React.FC = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-gradient-to-r from-pink-600 to-red-600 hover:from-pink-700 hover:to-red-700 text-white py-4 rounded-lg font-bold text-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 focus:ring-offset-transparent transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                  className="w-full bg-gradient-to-r from-pink-600 to-red-600 hover:from-pink-700 hover:to-red-700 text-white py-4 rounded-lg font-bold text-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 focus:ring-offset-transparent transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 >
-                  {loading ? 'Creating Account...' : `Register & Deposit ${formatDualCurrency(activationFeeUSD, selectedCountry?.currency || 'USD')}`}
+                  {loading ? (
+                    <>
+                      <div className="animate-spin mr-3">
+                        <svg className="h-6 w-6 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                      </div>
+                      <span>Creating your account...</span>
+                    </>
+                  ) : (
+                    <>
+                      <UserPlus className="w-5 h-5 mr-2" />
+                      <span>Register & Deposit {formatDualCurrency(activationFeeUSD, selectedCountry?.currency || 'USD')}</span>
+                    </>
+                  )}
                 </button>
               </form>
             )}

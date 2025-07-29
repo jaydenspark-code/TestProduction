@@ -1,5 +1,5 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 interface ProtectedRouteProps {
@@ -8,61 +8,40 @@ interface ProtectedRouteProps {
   allowedRoles?: string[];
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
-  children,
-  requiresPaid = false,
-  allowedRoles = []
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
+  children, 
+  requiresPaid = false, 
+  allowedRoles = [] 
 }) => {
-  const { user, isAuthenticated, loading } = useAuth();
-
-  // Debug logging
-  console.log('ProtectedRoute - User state:', {
-    user: user ? {
-      id: user.id,
-      email: user.email,
-      isVerified: user.isVerified,
-      isPaidUser: user.isPaidUser,
-      role: user.role
-    } : null,
-    isAuthenticated,
-    loading,
-    requiresPaid,
-    allowedRoles
-  });
+  const { user, loading } = useAuth();
+  const location = useLocation();
 
   if (loading) {
-    console.log('ProtectedRoute - Loading state, showing spinner');
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 flex items-center justify-center">
-        <div className="text-white text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-          <p>Loading...</p>
-        </div>
-      </div>
-    );
+    return <div className="min-h-screen flex items-center justify-center">
+      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
+    </div>;
   }
 
-  if (!isAuthenticated) {
-    console.log('ProtectedRoute - Not authenticated, redirecting to login');
-    return <Navigate to="/login" replace />;
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (requiresPaid && !user?.isPaidUser) {
-    console.log('ProtectedRoute - Requires paid but user not paid, redirecting to payment');
-    return <Navigate to="/payment" replace />;
-  }
-
-  if (!user?.isVerified) {
-    console.log('ProtectedRoute - User not verified, redirecting to verify-email');
+  // If user is not verified, redirect to email verification
+  if (!user.isVerified) {
     return <Navigate to="/verify-email" replace />;
   }
 
-  if (allowedRoles.length > 0 && !allowedRoles.includes(user?.role || '')) {
-    console.log('ProtectedRoute - User role not allowed, redirecting to dashboard');
+  // If route requires paid user and user hasn't paid, redirect to payment
+  if (requiresPaid && !user.isPaidUser) {
+    return <Navigate to="/payment" replace />;
+  }
+
+  // Check role-based access
+  if (allowedRoles.length > 0 && !allowedRoles.includes(user.role || '')) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  console.log('ProtectedRoute - All checks passed, rendering children');
+  // User meets all requirements, allow access
   return <>{children}</>;
 };
 

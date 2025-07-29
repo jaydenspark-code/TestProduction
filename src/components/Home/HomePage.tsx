@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTheme } from '../../context/ThemeContext';
 import { Users, TrendingUp, DollarSign, Shield, Globe, Zap, CheckCircle, Star, Crown } from 'lucide-react';
 import EarnProLogo from '../Logo/EarnProLogo';
+import BackendConnectionTest from '../Backend/BackendConnectionTest';
 
 const HomePage: React.FC = () => {
   const { theme } = useTheme();
@@ -121,6 +122,17 @@ const HomePage: React.FC = () => {
               <span>Join Agent Program</span>
             </Link>
           </div>
+        </div>
+      </section>
+
+      {/* Backend Status Section */}
+      <section className="py-16 px-4">
+        <div className="container mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-white mb-4">🔧 Real Backend Integration</h2>
+            <p className="text-white/70">Live connection to Supabase database and authentication</p>
+          </div>
+          <BackendConnectionTest />
         </div>
       </section>
 

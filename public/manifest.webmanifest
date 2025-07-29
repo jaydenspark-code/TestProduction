@@ -1,0 +1,50 @@
+{
+  "name": "EarnPro - Referral Rewards Platform",
+  "short_name": "EarnPro",
+  "description": "The world's most trusted referral rewards platform",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1F2937",
+  "theme_color": "#8B5CF6",
+  "lang": "en",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/pwa-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "url": "/dashboard",
+      "description": "Access your earnings dashboard"
+    },
+    {
+      "name": "Tasks",
+      "url": "/tasks",
+      "description": "View daily tasks"
+    },
+    {
+      "name": "Withdraw",
+      "url": "/withdraw",
+      "description": "Request withdrawal"
+    }
+  ],
+  "categories": ["finance", "productivity", "business"],
+  "orientation": "portrait-primary"
+}

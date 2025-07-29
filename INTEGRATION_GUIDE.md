@@ -58,32 +58,27 @@ https://earnpro.org/api/payments/webhook
 
 For security, add your server's IP address to the IP whitelist in Paystack.
 
-## 📧 3. Mailgun Configuration
+## 📧 3. SendGrid Configuration
 
-### Step 1: Verify DNS Records
+### Step 1: Get API Key
 
-Ensure all DNS records are properly configured on Hostinger:
+1. In SendGrid dashboard, go to **Settings** → **API Keys**
+2. Create a new API key with **Full Access** or **Mail Send** permissions
+3. Copy your API key
 
-**Sending Records:**
-- **DKIM:** `email._domainkey.earnpro.org` → `k=rsa; p=MIGFMA0GCSQGSIb3DQ...`
-- **SPF:** `earnpro.org` → `v=spf1 include:mailgun.org ~all`
+### Step 2: Verify Domain
 
-**Receiving Records:**
-- **MX:** `earnpro.org` → `mxa.eu.mailgun.org` (Priority: 10)
-- **MX:** `earnpro.org` → `mxb.eu.mailgun.org` (Priority: 10)
+1. Go to **Settings** → **Sender Authentication**
+2. Verify your domain `earnpro.org`
+3. Add the required DNS records to Hostinger
 
-**Tracking Records:**
-- **CNAME:** `email.earnpro.org` → `eu.mailgun.org`
+### Step 3: Configure Environment
 
-### Step 2: Get API Key
-
-1. In Mailgun dashboard, go to **Settings** → **API Keys**
-2. Copy your **Private API Key**
-
-### Step 3: Enable DMARC (Recommended)
-
-1. In Mailgun dashboard, go to **Domain settings** → **DNS records**
-2. Click **Enable DMARC** to improve email deliverability
+```env
+# SendGrid Configuration
+VITE_SENDGRID_API_KEY=your_sendgrid_api_key
+VITE_SENDGRID_FROM_EMAIL=noreply@earnpro.org
+```
 
 ## 🌐 4. Environment Configuration
 
@@ -104,10 +99,9 @@ VITE_PAYSTACK_SECRET_KEY=sk_test_your_secret_key
 VITE_PAYSTACK_CALLBACK_URL=https://earnpro.org/api/payments/callback
 VITE_PAYSTACK_WEBHOOK_URL=https://earnpro.org/api/payments/webhook
 
-# Mailgun Configuration
-VITE_MAILGUN_API_KEY=your_mailgun_api_key
-VITE_MAILGUN_DOMAIN=earnpro.org
-VITE_MAILGUN_REGION=eu
+# SendGrid Configuration
+VITE_SENDGRID_API_KEY=your_sendgrid_api_key
+VITE_SENDGRID_FROM_EMAIL=noreply@earnpro.org
 
 # Application Configuration
 VITE_APP_URL=https://earnpro.org

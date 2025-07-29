@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageCircle, Send, X, Bot, User, HelpCircle } from 'lucide-react';
 import { ChatMessage } from '../../types';
+import { useAuth } from '../../context/AuthContext';
+import { supabase } from '../../lib/supabaseClient';
 
 const ChatBot: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -69,48 +71,110 @@ const ChatBot: React.FC = () => {
 
   const findBestResponse = (userMessage: string) => {
     const lowerMessage = userMessage.toLowerCase();
-    
+
     for (const [category, data] of Object.entries(knowledgeBase)) {
       if (data.keywords.some(keyword => lowerMessage.includes(keyword))) {
         return data;
       }
     }
-    
+
     return {
       response: 'I\'m not sure about that specific question. Please try asking about referrals, agent program, tasks, payments, or contact our support team for detailed assistance.',
       suggestions: quickSuggestions.slice(0, 3)
     };
   };
 
+  // Add user context to responses
+  const getContextualResponse = (message: string, userProfile: any) => {
+    const context = {
+      userLevel: userProfile.level,
+      totalEarnings: userProfile.total_earnings,
+      referralCount: userProfile.referral_count
+    };
+
+    // Personalize responses based on user context
+    if (message.includes('earnings') && context.totalEarnings < 100) {
+      return "I see you're just getting started! Here are some quick ways to boost your earnings...";
+    }
+
+    return findBestResponse(message);
+  };
+
+  const { user } = useAuth() // Add authentication context
+  const [userContext, setUserContext] = useState<any>(null)
+
+  // Fetch user context on mount
+  useEffect(() => {
+    if (user) {
+      fetchUserContext()
+    }
+  }, [user])
+
+  const fetchUserContext = async () => {
+    if (!user || !supabase) return
+    
+    try {
+      const { data } = await supabase
+        .from('users')
+        .select('total_earned, is_verified, is_paid')
+        .eq('id', user.id)
+        .single()
+      
+      setUserContext(data)
+    } catch (error) {
+      console.error('Error fetching user context:', error)
+    }
+  }
+
   const handleSendMessage = async (message: string) => {
-    if (!message.trim()) return;
+    if (!message.trim()) return
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       message: message.trim(),
       isUser: true,
       timestamp: new Date()
-    };
+    }
 
-    setMessages(prev => [...prev, userMessage]);
-    setInputMessage('');
-    setIsTyping(true);
+    setMessages(prev => [...prev, userMessage])
+    setInputMessage('')
+    setIsTyping(true)
 
-    // Simulate typing delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    try {
+      const res = await fetch('https://bmtaqilpuszwoshtizmq.supabase.co/functions/v1/chatbot', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${user?.access_token || ''}` // Add auth header
+        },
+        body: JSON.stringify({ 
+          message,
+          userId: user?.id,
+          sessionId: Date.now().toString()
+        })
+      })
+      
+      const data = await res.json()
 
-    const response = findBestResponse(message);
-    const botMessage: ChatMessage = {
-      id: (Date.now() + 1).toString(),
-      message: response.response,
-      isUser: false,
-      timestamp: new Date(),
-      suggestions: response.suggestions
-    };
+      const botMessage: ChatMessage = {
+        id: (Date.now() + 1).toString(),
+        message: data.response,
+        isUser: false,
+        timestamp: new Date(),
+        suggestions: data.suggestions
+      }
 
-    setMessages(prev => [...prev, botMessage]);
-    setIsTyping(false);
-  };
+      setMessages(prev => [...prev, botMessage])
+    } catch (err) {
+      setMessages(prev => [...prev, {
+        id: (Date.now() + 2).toString(),
+        message: "Sorry, I couldn't reach the assistant. Please try again later.",
+        isUser: false,
+        timestamp: new Date()
+      }]);
+    }
+    setIsTyping(false)
+  }
 
   const handleSuggestionClick = (suggestion: string) => {
     handleSendMessage(suggestion);
@@ -163,23 +227,21 @@ const ChatBot: React.FC = () => {
               <div key={message.id} className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}>
                 <div className={`max-w-[80%] ${message.isUser ? 'order-2' : 'order-1'}`}>
                   <div className={`flex items-start space-x-2 ${message.isUser ? 'flex-row-reverse space-x-reverse' : ''}`}>
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      message.isUser ? 'bg-purple-600' : 'bg-blue-600'
-                    }`}>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${message.isUser ? 'bg-purple-600' : 'bg-blue-600'
+                      }`}>
                       {message.isUser ? <User className="w-4 h-4 text-white" /> : <Bot className="w-4 h-4 text-white" />}
                     </div>
-                    <div className={`rounded-lg p-3 ${
-                      message.isUser 
-                        ? 'bg-purple-600 text-white' 
+                    <div className={`rounded-lg p-3 ${message.isUser
+                        ? 'bg-purple-600 text-white'
                         : 'bg-white/10 text-white border border-white/20'
-                    }`}>
+                      }`}>
                       <p className="text-sm">{message.message}</p>
                       <p className="text-xs opacity-70 mt-1">
                         {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </p>
                     </div>
                   </div>
-                  
+
                   {/* Suggestions */}
                   {!message.isUser && message.suggestions && (
                     <div className="mt-2 space-y-1">
@@ -197,7 +259,7 @@ const ChatBot: React.FC = () => {
                 </div>
               </div>
             ))}
-            
+
             {/* Typing Indicator */}
             {isTyping && (
               <div className="flex justify-start">

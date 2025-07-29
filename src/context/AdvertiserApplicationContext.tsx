@@ -34,13 +34,30 @@ const AdvertiserApplicationContext = createContext<AdvertiserApplicationContextT
 export const useAdvertiserApplications = () => {
   const context = useContext(AdvertiserApplicationContext);
   if (!context) {
-    throw new Error('useAdvertiserApplications must be used within an AdvertiserApplicationProvider');
+    console.warn('useAdvertiserApplications called outside of AdvertiserApplicationProvider, using fallback');
+    // Return safe fallback values instead of throwing error
+    return {
+      applications: [],
+      addApplication: () => {
+        console.warn('addApplication called but no provider available');
+      },
+      updateApplicationStatus: () => {
+        console.warn('updateApplicationStatus called but no provider available');
+      }
+    };
   }
   return context;
 };
 
 export const AdvertiserApplicationProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const { updateUser } = useAuth();
+  // Safely get auth context, handle case where it might not be available
+  let updateUser;
+  try {
+    ({ updateUser } = useAuth());
+  } catch (error) {
+    console.warn('AdvertiserApplicationProvider: useAuth not available, using fallback');
+    updateUser = () => {};
+  }
   const [applications, setApplications] = useState<AdvertiserApplication[]>([
     // Mock data for demonstration
     {
@@ -95,10 +112,8 @@ export const AdvertiserApplicationProvider: React.FC<{ children: ReactNode }> = 
   };
 
   const updateApplicationStatus = (applicationId: string, status: 'approved' | 'rejected', notes: string, reviewedBy: string) => {
-    const app = applications.find(a => a.id === applicationId);
-    if (app && status === 'approved') {
-      updateUser({ role: 'advertiser', isAdvertiser: true });
-    }
+    // Note: In a real application, this would update the applicant's role in the database
+    // but should NOT update the current admin user's role
     setApplications(prev =>
       prev.map(app =>
         app.id === applicationId

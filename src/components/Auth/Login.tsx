@@ -46,53 +46,35 @@ const Login: React.FC = () => {
     setError('');
 
     try {
-      console.log('Login attempt started for:', loginField);
+      console.log('🔐 Login attempt for:', loginField);
+      
       const result = await login(loginField, password);
+      
+      console.log('📝 Login result:', result);
 
       if (result.success) {
-        console.log('Login successful, determining redirect...');
-
-        // After successful login, the AuthContext's user state should be updated
-        // We can now safely check the user's status from the context
-        // The refreshUser() call inside AuthContext.login() ensures 'user' is fresh
-
-        // Give a tiny moment for React to re-render with updated context if needed
-        await new Promise(resolve => setTimeout(resolve, 100));
-
-        // Get the current user from context after refreshUser()
-        const currentUser = user;
-
-        console.log('Current user state after login:', {
-          user: currentUser ? {
-            id: currentUser.id,
-            email: currentUser.email,
-            isVerified: currentUser.isVerified,
-            isPaidUser: currentUser.isPaidUser
-          } : null
-        });
-
+        console.log('✅ Login successful! Waiting for user state...');
+        
+        // Wait a bit for the user state to be set
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        console.log('👤 Current user after login:', user);
+        
+        // Navigate based on user state or just go to dashboard
         if (result.requires2FA) {
+          console.log('🔐 2FA required, redirecting...');
           navigate('/verify-2fa');
-        } else if (currentUser && !currentUser.isVerified) {
-          console.log('Login successful, but user not verified. Redirecting to /verify-email');
-          navigate('/verify-email');
-        } else if (currentUser && !currentUser.isPaidUser) {
-          console.log('Login successful, user verified but not paid. Redirecting to /payment');
-          navigate('/payment');
-        } else if (currentUser) {
-          console.log('Login successful, user verified and paid. Redirecting to /dashboard');
-          navigate('/dashboard');
         } else {
-          console.log('Login successful but no user data available, redirecting to /dashboard');
+          console.log('🏠 Redirecting to dashboard...');
           navigate('/dashboard');
         }
       } else {
-        console.log('Login failed:', result.error);
+        console.log('❌ Login failed:', result.error);
         setError(result.error || 'Login failed. Please check your credentials.');
       }
-    } catch (err) {
-      console.error('Login error:', err);
-      setError('An unexpected error occurred during login.');
+    } catch (err: any) {
+      console.error('❌ Login error:', err);
+      setError(err.message || 'An unexpected error occurred during login.');
     } finally {
       setLoading(false);
     }

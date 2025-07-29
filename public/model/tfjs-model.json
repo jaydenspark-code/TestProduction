@@ -1,0 +1,67 @@
+{
+  "format": "layers-model",
+  "generatedBy": "keras v2.4.0",
+  "convertedBy": "TensorFlow.js Converter v1.3.1",
+  "modelTopology": {
+    "keras_version": "2.4.0",
+    "backend": "tensorflow",
+    "model_config": {
+      "class_name": "Sequential",
+      "config": {
+        "name": "sequential",
+        "layers": [
+          {
+            "class_name": "Dense",
+            "config": {
+              "name": "dense",
+              "trainable": true,
+              "batch_input_shape": [null, 5],
+              "dtype": "float32",
+              "units": 10,
+              "activation": "relu",
+              "use_bias": true,
+              "kernel_initializer": {
+                "class_name": "GlorotUniform",
+                "config": {"seed": null}
+              },
+              "bias_initializer": {
+                "class_name": "Zeros",
+                "config": {}
+              }
+            }
+          },
+          {
+            "class_name": "Dense",
+            "config": {
+              "name": "dense_1",
+              "trainable": true,
+              "dtype": "float32",
+              "units": 1,
+              "activation": "sigmoid",
+              "use_bias": true,
+              "kernel_initializer": {
+                "class_name": "GlorotUniform",
+                "config": {"seed": null}
+              },
+              "bias_initializer": {
+                "class_name": "Zeros",
+                "config": {}
+              }
+            }
+          }
+        ]
+      }
+    }
+  },
+  "weightsManifest": [
+    {
+      "paths": ["model.weights.bin"],
+      "weights": [
+        {"name": "dense/kernel", "shape": [5, 10], "dtype": "float32"},
+        {"name": "dense/bias", "shape": [10], "dtype": "float32"},
+        {"name": "dense_1/kernel", "shape": [10, 1], "dtype": "float32"},
+        {"name": "dense_1/bias", "shape": [1], "dtype": "float32"}
+      ]
+    }
+  ]
+}

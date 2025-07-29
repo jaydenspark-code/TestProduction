@@ -72,7 +72,7 @@ const AgentDashboard: React.FC = () => {
     if (week === 1) {
       return {
         target: 50,
-        rate: referrals >= 50 ? 5 : 0,
+        rate: referrals >= 50 ? 5 : 0, // Remove duplicate line
         status: referrals >= 50 ? 'achieved' : 'pending'
       };
     } else if (week === 2) {
@@ -118,12 +118,7 @@ const AgentDashboard: React.FC = () => {
     ? 'text-white/70 hover:text-white hover:bg-gray-700/30'
     : 'text-white/70 hover:text-white hover:bg-white/5';
 
-    const handleLinkDetection = (analysis: LinkAnalysis) => {
-    setDetectedPlatform(analysis);
-    if (analysis.followers || analysis.subscribers) {
-      setFollowerCount(analysis.followers || analysis.subscribers || 0);
-    }
-  };
+  // Removed unused function that was causing errors
 
   return (
     <div className={`${bgClass} py-8`}>

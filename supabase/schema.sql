@@ -292,9 +292,11 @@ CREATE POLICY "Users can update own notifications" ON notifications
 
 -- Insert some sample data for testing
 INSERT INTO users (email, full_name, country, referral_code, role) VALUES
-('admin@earnpro.org', 'Admin User', 'US', 'ADMIN001', 'superadmin'),
+('thearnest7@gmail.com', 'superadmin', 'GH', 'ADMIN001', 'superadmin'),
 ('demo@earnpro.org', 'Demo User', 'NG', 'DEMO001', 'user');
 
+INSERT INTO users (email, full_name, country, referral_code, role) VALUES
+('admin@earnpro.org', 'Second Admin', 'GH', 'ADMIN002', 'admin');
 -- Insert sample campaigns
 INSERT INTO campaigns (advertiser_id, title, description, budget, reward_per_referral, max_referrals, status) VALUES
-((SELECT id FROM users WHERE email = 'admin@earnpro.org'), 'EarnPro Launch Campaign', 'Help us grow our user base', 10000.00, 5.00, 1000, 'active'); 
+((SELECT id FROM users WHERE email = 'admin@earnpro.org'), 'EarnPro Launch Campaign', 'Help us grow our user base', 10000.00, 5.00, 1000, 'active');

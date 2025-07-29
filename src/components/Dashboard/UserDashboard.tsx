@@ -1,12 +1,16 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { Users, TrendingUp, DollarSign, Gift, Copy, Share2, CheckCircle, BarChart3, QrCode, Calendar, Play, MessageCircle, Youtube, Wallet } from 'lucide-react';
+import { Users, TrendingUp, DollarSign, Gift, Copy, Share2, CheckCircle, BarChart3, QrCode, Calendar, Play, MessageCircle, Youtube, Wallet, Brain } from 'lucide-react';
 import { ReferralStats } from '../../types';
 import { DualCurrencyDisplay } from '../../utils/currency';
 import QRCodeGenerator from '../QRCode/QRCodeGenerator';
 import ReferralTemplate from './ReferralTemplate';
 import { Link } from 'react-router-dom';
+import { PersonalizedInsightsWidget } from '../AIWidgets/PersonalizedInsightsWidget';
+import SmartMatchingWidget from '../AIWidgets/SmartMatchingWidget';
+import AIPerformanceWidget from '../AIWidgets/AIPerformanceWidget';
+import PersonalizedDashboardLayout from '../AIPersonalization/PersonalizedDashboardLayout';
 
 const UserDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -113,35 +117,120 @@ const UserDashboard: React.FC = () => {
           )}
         </div>
 
-        {/* Welcome Bonus Message */}
-        {showWelcomeBonus && (
-          <div className={`${cardClass} mb-8 relative`}>
-            <button
-              onClick={() => setShowWelcomeBonus(false)}
-              className="absolute top-4 right-4 text-white/50 hover:text-white"
-            >
-              ✕
-            </button>
-            <div className="text-center">
-              <h3 className="text-xl font-bold text-white mb-4">🎉 Welcome Bonus Activated!</h3>
-              <p className="text-white/80 mb-6">
-                Congratulations! You've received a{' '}
-                <DualCurrencyDisplay
-                  usdAmount={3.00}
-                  userCurrency={user?.currency || 'USD'}
-                  className={`font-bold ${theme === 'professional' ? 'text-cyan-300' : 'text-purple-300'}`}
-                />{' '}
-                welcome bonus for activating your account.
-              </p>
+    <PersonalizedDashboardLayout 
+      userId={user?.id || ''}
+      availableWidgets={[
+        {
+          id: 'welcome-bonus',
+          name: 'Welcome Bonus',
+          category: 'info',
+          priority: 10,
+          visible: showWelcomeBonus
+        },
+        {
+          id: 'quick-actions',
+          name: 'Quick Actions',
+          category: 'actions',
+          priority: 9,
+          visible: true
+        },
+        {
+          id: 'stats-grid',
+          name: 'Statistics Overview',
+          category: 'analytics',
+          priority: 8,
+          visible: true
+        },
+        {
+          id: 'referral-link',
+          name: 'Referral Link',
+          category: 'referral',
+          priority: 7,
+          visible: true
+        },
+        {
+          id: 'earnings-breakdown',
+          name: 'Earnings Breakdown',
+          category: 'analytics',
+          priority: 6,
+          visible: true
+        },
+        {
+          id: 'daily-tasks',
+          name: 'Daily Tasks',
+          category: 'tasks',
+          priority: 5,
+          visible: true
+        },
+        {
+          id: 'community-links',
+          name: 'Community Links',
+          category: 'social',
+          priority: 4,
+          visible: true
+        },
+        {
+          id: 'ai-insights',
+          name: 'AI Personalized Insights',
+          category: 'ai',
+          priority: 3,
+          visible: true
+        },
+        {
+          id: 'smart-matching',
+          name: 'Smart Matching',
+          category: 'ai',
+          priority: 2,
+          visible: true
+        },
+        {
+          id: 'ai-performance',
+          name: 'AI Performance',
+          category: 'ai',
+          priority: 1,
+          visible: true
+        },
+        {
+          id: 'recent-activity',
+          name: 'Recent Activity',
+          category: 'analytics',
+          priority: 0,
+          visible: true
+        }
+      ]}
+    >
+
+      {/* Wrap the existing dashboard components as children */}
+
+          {/* Welcome Bonus Message */}
+          {showWelcomeBonus && (
+            <div className={`${cardClass} mb-8 relative`}>
               <button
                 onClick={() => setShowWelcomeBonus(false)}
-                className={`${buttonPrimaryClass} text-white px-6 py-2 rounded-lg font-medium transition-all duration-200`}
+                className="absolute top-4 right-4 text-white/50 hover:text-white"
               >
-                Claim Bonus
+                ✕
               </button>
+              <div className="text-center">
+                <h3 className="text-xl font-bold text-white mb-4">🎉 Welcome Bonus Activated!</h3>
+                <p className="text-white/80 mb-6">
+                  Congratulations! You've received a{' '}
+                  <DualCurrencyDisplay
+                    usdAmount={3.00}
+                    userCurrency={user?.currency || 'USD'}
+                    className={`font-bold ${theme === 'professional' ? 'text-cyan-300' : 'text-purple-300'}`}
+                  />{' '}
+                  welcome bonus for activating your account.
+                </p>
+                <button
+                  onClick={() => setShowWelcomeBonus(false)}
+                  className={`${buttonPrimaryClass} text-white px-6 py-2 rounded-lg font-medium transition-all duration-200`}
+                >
+                  Claim Bonus
+                </button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
         {/* Quick Actions */}
         <div className={`${cardClass} mb-8`}>
@@ -470,6 +559,43 @@ const UserDashboard: React.FC = () => {
           </div>
         </div>
 
+        {/* AI-Powered Insights Section */}
+        <div className="mt-8 mb-8">
+          <div className="flex items-center gap-3 mb-6">
+            <Brain className={`w-8 h-8 ${theme === 'professional' ? 'text-cyan-400' : 'text-purple-400'}`} />
+            <h2 className="text-2xl font-bold text-white">AI-Powered Insights</h2>
+          </div>
+          
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+            {/* Personalized Insights Widget */}
+            {user?.id && (
+              <PersonalizedInsightsWidget 
+                userId={user.id} 
+                className="" 
+              />
+            )}
+            
+            {/* Smart Matching Widget */}
+            {user?.id && (
+              <SmartMatchingWidget 
+                userId={user.id} 
+                className="" 
+                maxMatches={3}
+              />
+            )}
+          </div>
+          
+          {/* AI Performance Widget - Full Width */}
+          <div className="mt-8">
+            {user?.id && (
+              <AIPerformanceWidget 
+                userId={user.id} 
+                className="" 
+              />
+            )}
+          </div>
+        </div>
+
         {/* Recent Activity */}
         <div className={`mt-8 ${cardClass}`}>
           <h3 className="text-xl font-bold text-white mb-4">Recent Activity</h3>
@@ -515,6 +641,7 @@ const UserDashboard: React.FC = () => {
             ))}
           </div>
         </div>
+    </PersonalizedDashboardLayout>
       </div>
 
       {/* QR Code Modal */}

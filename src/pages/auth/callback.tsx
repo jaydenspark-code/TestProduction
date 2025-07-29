@@ -32,8 +32,10 @@ const AuthCallback = () => {
           }
 
           if (data.session?.user) {
+            console.log('✅ Session established, refreshing user data...');
             await refreshUser();
-            navigate('/payment/setup', { replace: true });
+            console.log('🔄 User data refreshed, redirecting to payment...');
+            navigate('/payment', { replace: true }); // Fixed: /payment instead of /payment/setup
           }
         }
       } catch (error: any) {
@@ -56,6 +58,7 @@ const AuthCallback = () => {
 };
 
 export default AuthCallback;
+
 
 
 
