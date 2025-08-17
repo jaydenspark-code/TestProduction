@@ -39,9 +39,9 @@ class EnhancedEarnProChatbot {
     'agent_program': {
       keywords: ['agent', 'influencer', 'program', 'milestone', 'weekly', 'commission', 'apply'],
       contextualResponses: {
-        eligible: 'Based on your activity, you might be eligible for our Agent Program! Agents get 5-20% progressive weekly commissions, milestone bonuses, priority withdrawals, and exclusive marketing tools. Minimum social media following required.',
+        eligible: 'Based on your activity, you might be eligible for our Agent Program! Agents get 5-35% progressive weekly commissions, milestone bonuses, priority withdrawals, and exclusive marketing tools. Minimum social media following required.',
         not_eligible: 'The Agent Program is for content creators with established social media presence. Requirements include minimum followers on platforms like Instagram, TikTok, or YouTube. Focus on building your following and earnings first!',
-        default: 'Our Agent Program offers enhanced earning opportunities for influencers and content creators. Benefits include progressive weekly commissions (5-20%), milestone bonuses, faster withdrawals, and exclusive promotional tools.'
+        default: 'Our Agent Program offers enhanced earning opportunities for influencers and content creators. Benefits include progressive weekly commissions (5-35%), milestone bonuses, faster withdrawals, and exclusive promotional tools.'
       },
       suggestions: ['Agent requirements', 'Commission structure', 'Application process', 'Benefits overview']
     },

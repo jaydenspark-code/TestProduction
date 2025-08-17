@@ -38,7 +38,7 @@
 
 #### 👑 Agent Program (100% Complete)
 - **Application system** with admin review
-- **Progressive commission rates** (5-20%)
+- **Progressive commission rates** (5-35%)
 - **Milestone tracking**
 - **Social media verification**
 - **Advanced analytics**

@@ -24,7 +24,7 @@ class SmartEarnProChatbot {
     },
     'agent_program': {
       keywords: ['agent', 'influencer', 'program', 'milestone', 'weekly commission'],
-      response: 'The Agent Program is for content creators with social media following. Benefits: Progressive weekly commissions (5-20%), milestone bonuses, increased withdrawal frequency, and exclusive tools. Minimum follower requirements apply.',
+      response: 'The Agent Program is for content creators with social media following. Benefits: Progressive weekly commissions (5-35%), milestone bonuses, increased withdrawal frequency, and exclusive tools. Minimum follower requirements apply.',
       suggestions: ['Agent requirements', 'Commission rates', 'Apply for agent', 'Milestone bonuses']
     },
     'daily_tasks': {

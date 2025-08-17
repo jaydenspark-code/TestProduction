@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTheme } from '../../context/ThemeContext';
 import { Users, Plus, Trash2, CheckCircle, AlertCircle, Loader } from 'lucide-react';
-import testAccountsService from '../../services/testAccountsService';
+import { testAccountsService } from '../../services/testAccountsService';
 
 const TestAccountManager: React.FC = () => {
   const { theme } = useTheme();
@@ -34,7 +34,7 @@ const TestAccountManager: React.FC = () => {
 
   const checkAccountStatus = async () => {
     try {
-      const status = await testAccountsService.checkTestAccounts();
+  const status = await testAccountsService.checkTestAccounts();
       setAccountStatus(status);
     } catch (error) {
       console.error('Error checking account status:', error);
@@ -47,7 +47,7 @@ const TestAccountManager: React.FC = () => {
     setMessage('');
     
     try {
-      const result = await testAccountsService.createAllTestAccounts();
+  const result = await testAccountsService.createAllTestAccounts();
       setMessage(result.message);
       
       if (result.success) {
@@ -70,7 +70,7 @@ const TestAccountManager: React.FC = () => {
     setMessage('');
     
     try {
-      const result = await testAccountsService.deleteAllTestAccounts();
+  const result = await testAccountsService.deleteAllTestAccounts();
       setMessage(result.message);
       
       if (result.success) {

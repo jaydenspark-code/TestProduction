@@ -18,6 +18,7 @@ import Register from './components/Auth/Register';
 import VerifyEmail from './pages/auth/verify-email';
 import VerifyCode from './pages/auth/verify-code';
 import PaymentSetup from './components/Payment/PaymentSetup';
+import PaymentSetupSimple from './components/Payment/PaymentSetupSimple'; // TEMPORARY SIMPLIFIED VERSION
 import PaymentTestPage from './components/Payment/PaymentTestPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import UserDashboard from './components/Dashboard/UserDashboard';
@@ -32,6 +33,7 @@ import { AICampaignBuilder } from './components/Campaigns/AICampaignBuilder';
 import { CampaignDashboard } from './components/Campaigns/CampaignDashboard';
 
 // Import actual components instead of placeholders
+import AdvertiserPortal from './components/Advertiser/AdvertiserPortal';
 import EnhancedAdvertiserPortal from './components/Advertiser/EnhancedAdvertiserPortal';
 import AdvertiserApplication from './components/Advertiser/AdvertiserApplication';
 import LegalPortal from './components/Legal/LegalPortal';
@@ -40,6 +42,7 @@ import Leaderboard from './components/Leaderboard/Leaderboard';
 import UserProfile from './components/Profile/UserProfile';
 import BusinessPortal from './components/Advertiser/BusinessPortal';
 import AdminPanel from './components/Admin/AdminPanel';
+import TwoFactorAuth from './components/Auth/TwoFactorAuth';
 import AuthCallback from './pages/auth/callback';
 import PaymentSuccess from './components/Payment/PaymentSuccess';
 
@@ -52,7 +55,7 @@ import PaymentRequired from './components/Auth/PaymentRequired';
 
 function App() {
   const [isInitialized, setIsInitialized] = React.useState(false);
-  const [initError] = React.useState<Error | null>(null);
+  const [initError, setInitError] = React.useState<Error | null>(null);
 
   React.useEffect(() => {
     async function initializeApp() {
@@ -60,7 +63,7 @@ function App() {
         // Test Supabase connection if available
         if (supabase) {
           console.log('🔍 Testing Supabase connection...');
-          const { error } = await supabase.from('users').select('count').limit(1);
+          const { data, error } = await supabase.from('users').select('count').limit(1);
           if (error) {
             console.warn('⚠️ Database connection test failed:', error.message);
             // Continue anyway - the app can work in testing mode
@@ -150,7 +153,7 @@ function App() {
                 </ProtectedRoute>
               } />
               <Route path="/leaderboard" element={
-                <ProtectedRoute allowUnpaidAccess>
+                <ProtectedRoute requiresPaid>
                   <Leaderboard />
                 </ProtectedRoute>
               } />

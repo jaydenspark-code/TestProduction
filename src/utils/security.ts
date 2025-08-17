@@ -229,11 +229,6 @@ export class SecurityManager {
     return crypto.randomUUID();
   }
 
-  // Generate secure token (for email verification, etc.)
-  async generateSecureToken(length: number = 32): Promise<string> {
-    return this.generateRandomString(length);
-  }
-
   // Check if Web Crypto API is supported
   static isSupported(): boolean {
     return (
@@ -244,22 +239,6 @@ export class SecurityManager {
     );
   }
 }
-
-// Export convenience functions
-export const generateSecureToken = async (length: number = 32): Promise<string> => {
-  const securityManager = SecurityManager.getInstance();
-  return securityManager.generateSecureToken(length);
-};
-
-export const generateUUID = (): string => {
-  const securityManager = SecurityManager.getInstance();
-  return securityManager.generateUUID();
-};
-
-export const hashData = async (data: string): Promise<string> => {
-  const securityManager = SecurityManager.getInstance();
-  return securityManager.hash(data);
-};
 
 // Example usage:
 /*

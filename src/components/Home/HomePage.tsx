@@ -187,7 +187,7 @@ const HomePage: React.FC = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
               <div className="text-center">
-                <div className={`text-3xl font-bold ${theme === 'professional' ? 'text-cyan-300' : 'text-purple-300'} mb-2`}>5-20%</div>
+                <div className={`text-3xl font-bold ${theme === 'professional' ? 'text-cyan-300' : 'text-purple-300'} mb-2`}>5-35%</div>
                 <div className="text-white font-medium mb-2">Weekly Commission</div>
                 <div className="text-white/70 text-sm">Progressive rates based on performance</div>
               </div>
@@ -268,7 +268,7 @@ const HomePage: React.FC = () => {
                     <Star key={i} className="w-5 h-5 text-yellow-400 fill-current" />
                   ))}
                   {testimonial.isAgent && (
-                    <Crown className="w-4 h-4 text-yellow-400 ml-2" title="Agent" />
+                    <Crown className="w-4 h-4 text-yellow-400 ml-2" />
                   )}
                 </div>
                 <p className="text-white/80 mb-4">"{testimonial.message}"</p>

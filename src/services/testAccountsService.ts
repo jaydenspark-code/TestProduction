@@ -1,8 +1,39 @@
+// ...existing code...
 import { supabase } from '../lib/supabase';
 import { TEST_ACCOUNTS, TEST_CONFIG } from '../config/test.config';
-import { generateSecureToken } from '../utils/security';
+
 
 class TestAccountsService {
+  // Check if test accounts exist (by email)
+    // check if test accounts exist (by email)
+    async checkTestAccounts(): Promise<{ [email: string]: boolean }> {
+    const emails = [
+      'thearnest7@gmail.com',
+      'ijaydenspark@gmail.com',
+      'princeedie142@gmail.com',
+      'noguyliketrey@gmail.com'
+    ];
+    const status: { [email: string]: boolean } = {};
+    for (const email of emails) {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', email)
+        .single();
+      status[email] = !!data && !error;
+    }
+    return status;
+  }
+
+  // Create all test accounts (admin action)
+  async createAllTestAccounts() {
+    return this.createTestAccounts();
+  }
+
+  // Delete all test accounts (admin action)
+  async deleteAllTestAccounts() {
+    return this.cleanupTestAccounts();
+  }
   private static instance: TestAccountsService;
 
   private constructor() {}
@@ -16,14 +47,9 @@ class TestAccountsService {
 
   async createTestAccounts() {
     try {
-      // Create admin account
-      await this.createUserAccount(TEST_ACCOUNTS.ADMIN);
-
-      // Create test user accounts
-      for (const user of TEST_ACCOUNTS.USERS) {
+      for (const user of TEST_ACCOUNTS) {
         await this.createUserAccount(user);
       }
-
       return { success: true, message: 'Test accounts created successfully' };
     } catch (error) {
       console.error('Error creating test accounts:', error);
@@ -31,46 +57,7 @@ class TestAccountsService {
     }
   }
 
-  async createAllTestAccounts() {
-    return this.createTestAccounts();
-  }
-
-  async checkTestAccounts() {
-    try {
-      const accountStatus: { [email: string]: boolean } = {};
-      
-      // Check admin account
-      const { data: adminUser } = await supabase
-        .from('users')
-        .select('id')
-        .eq('email', TEST_ACCOUNTS.ADMIN.email)
-        .single();
-      
-      accountStatus[TEST_ACCOUNTS.ADMIN.email] = !!adminUser;
-
-      // Check user accounts
-      for (const user of TEST_ACCOUNTS.USERS) {
-        const { data: userData } = await supabase
-          .from('users')
-          .select('id')
-          .eq('email', user.email)
-          .single();
-        
-        accountStatus[user.email] = !!userData;
-      }
-
-      return accountStatus;
-    } catch (error) {
-      console.error('Error checking test accounts:', error);
-      throw error;
-    }
-  }
-
-  async deleteAllTestAccounts() {
-    return this.cleanupTestAccounts();
-  }
-
-  private async createUserAccount(user: typeof TEST_ACCOUNTS.ADMIN) {
+  private async createUserAccount(user: typeof TEST_ACCOUNTS[0]) {
     try {
       const { data: existingUser } = await supabase
         .from('users')
@@ -88,7 +75,7 @@ class TestAccountsService {
         password: user.password,
         options: {
           data: {
-            full_name: user.fullName,
+            full_name: `${user.firstName} ${user.lastName}`,
             role: user.role,
             is_test_account: true
           }
@@ -101,11 +88,11 @@ class TestAccountsService {
       const { error: profileError } = await supabase.from('profiles').insert([
         {
           id: data.user?.id,
-          full_name: user.fullName,
+          full_name: `${user.firstName} ${user.lastName}`,
           email: user.email,
           role: user.role,
           is_test_account: true,
-          referral_code: TEST_CONFIG.REFERRAL_CODE,
+          referral_code: user.referralCode,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         }
@@ -143,13 +130,16 @@ class TestAccountsService {
 
   async verifyTestAccount(email: string) {
     try {
-      const verificationToken = generateSecureToken();
+  // Fallback: generate a simple random token
+  const verificationToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
       
+      // Set expiry to 1 hour from now (3600000 ms)
+      const expiresAt = new Date(Date.now() + 3600000).toISOString();
       const { error } = await supabase.from('email_verification').insert([
         {
           email,
           token: verificationToken,
-          expires_at: new Date(Date.now() + TEST_CONFIG.EMAIL_VERIFICATION.TOKEN_EXPIRY).toISOString()
+          expires_at: expiresAt
         }
       ]);
 
@@ -164,4 +154,3 @@ class TestAccountsService {
 }
 
 export const testAccountsService = TestAccountsService.getInstance();
-export default testAccountsService;

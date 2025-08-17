@@ -23,6 +23,7 @@ If CORS settings can't be changed, we can modify the client configuration to wor
 ## The Issue
 
 Your console shows:
+
 - `Access to fetch at 'https://bmtaqilpuszwoshtizmq.supabase.co/rest/v1/...' from origin 'http://localhost:5175' has been blocked by CORS policy`
 
 This means the Supabase server is rejecting requests from your development server due to CORS restrictions.

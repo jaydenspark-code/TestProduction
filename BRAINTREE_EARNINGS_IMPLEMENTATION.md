@@ -15,7 +15,7 @@ EARNING SOURCES:
 ├── 💰 Referral Commissions (3 levels)
 ├── 📋 Task Completions (Videos, Telegram, etc.)
 ├── 📺 Ad Engagement (Views, Clicks, Conversions)
-├── 🎯 Agent Bonuses (5-20% commission)
+├── 🎯 Agent Bonuses (5-35% commission)
 └── 🎁 Welcome/Milestone Bonuses
 
 # 🔷 BRAINTREE INTEGRATION DETAILS:
@@ -154,7 +154,7 @@ REFERRAL EARNINGS:
 ├── Level 1 (Direct): $3-5 per signup
 ├── Level 2 (Indirect): $1-2 per signup
 ├── Level 3 (Indirect): $0.50-1 per signup
-└── Agent Bonus: 5-20% of referral earnings
+└── Agent Bonus: 5-35% of referral earnings
 
 TASK EARNINGS:
 ├── Video Tasks: $0.50-2.50 per completion

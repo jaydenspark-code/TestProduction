@@ -27,7 +27,7 @@ const ChatBot: React.FC = () => {
     },
     'agent': {
       keywords: ['agent', 'influencer', 'program', 'commission'],
-      response: 'The EarnPro Agent Program is for influencers and content creators. Agents get progressive weekly commissions (5-20%), milestone bonuses, and priority withdrawal processing. You need minimum followers on social platforms to apply.',
+      response: 'The EarnPro Agent Program is for influencers and content creators. Agents get progressive weekly commissions (5-35%), milestone bonuses, and priority withdrawal processing. You need minimum followers on social platforms to apply.',
       suggestions: ['Agent requirements', 'Commission rates', 'How to apply for agent program?']
     },
     'tasks': {

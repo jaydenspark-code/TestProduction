@@ -38,21 +38,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   // Global loading guard: block all children rendering until loading is false
-  // TEMPORARILY DISABLED TO AVOID CIRCULAR DEPENDENCY
-  // const LoadingSpinner = React.useMemo(() => {
-  //   try {
-  //     // eslint-disable-next-line @typescript-eslint/no-var-requires
-  //     return require('../components/Layout/LoadingSpinner').default;
-  //   } catch {
-  //     return () => <div>Loading...</div>;
-  //   }
-  // }, []);
-
-  const LoadingSpinner = () => (
-    <div className="flex items-center justify-center min-h-screen bg-gray-900">
-      <div className="text-white text-xl">Loading...</div>
-    </div>
-  );
+  // Import LoadingSpinner dynamically to avoid circular deps
+  const LoadingSpinner = React.useMemo(() => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      return require('../components/Layout/LoadingSpinner').default;
+    } catch {
+      return () => <div>Loading...</div>;
+    }
+  }, []);
 
   // Helper function to ensure user profile exists in database
   const ensureUserProfileExists = async (): Promise<{ success: boolean; error?: string }> => {

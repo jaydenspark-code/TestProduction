@@ -370,7 +370,7 @@ const AgentApplication: React.FC = () => {
               <div className={colors.cardInner}>
                 <h4 className={`${colors.textPrimary} font-medium mb-2`}>Agent Program Benefits:</h4>
                 <ul className={`${colors.textSecondary} text-sm space-y-1`}>
-                  <li>• Progressive weekly commission rates (5-20%)</li>
+                  <li>• Progressive weekly commission rates (5-35%)</li>
                   <li>• Milestone bonuses and one-time rewards</li>
                   <li>• Increased withdrawal frequency (up to 3x per week)</li>
                   <li>• Exclusive marketing materials and support</li>

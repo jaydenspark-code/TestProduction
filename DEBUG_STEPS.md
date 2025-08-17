@@ -1,13 +1,15 @@
 🔧 REGISTRATION DEBUG STEPS
 
 PROBLEM: Registration failing due to multiple issues:
-1. ❌ Database RLS policies blocking user creation  
+
+1. ❌ Database RLS policies blocking user creation
 2. ❌ Email API not working (causing 404 errors)
 3. ❌ Page routing issue (URL changes but component doesn't update)
 
 SOLUTION STEPS:
 
 STEP 1: Fix Database (MOST CRITICAL)
+
 - Apply the SQL fix in URGENT_DATABASE_FIX.md
 - This is blocking ALL user creation
 
@@ -23,11 +25,13 @@ After database fix, test with these console commands:
 ❌ BAD: "❌ Supabase auth signup error"
 
 STEP 3: Check Database
+
 - Go to Supabase dashboard → Table Editor → users table
 - Look for your test user entry
 - If user exists = registration worked, email is the only issue
 
 STEP 4: Route Testing
+
 - Try direct URL: localhost:5173/verify-code?email=test@test.com
 - Should show verification page, not registration page
 

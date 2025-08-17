@@ -21,14 +21,14 @@ DROP POLICY IF EXISTS "Allow user registration" ON public.users;
 
 -- Create permissive policy for registration
 CREATE POLICY "Allow user registration and OAuth creation" ON public.users
-    FOR INSERT 
-    WITH CHECK (
-        auth.uid() IS NULL
-        OR
-        (auth.uid() IS NOT NULL AND auth.uid() = id)
-        OR
-        current_setting('role') = 'service_role'
-    );
+FOR INSERT
+WITH CHECK (
+auth.uid() IS NULL
+OR
+(auth.uid() IS NOT NULL AND auth.uid() = id)
+OR
+current_setting('role') = 'service_role'
+);
 
 COMMIT;
 

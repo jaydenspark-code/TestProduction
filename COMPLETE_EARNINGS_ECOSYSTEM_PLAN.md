@@ -91,7 +91,7 @@ PRIMARY GATEWAYS:
    ├── Direct Referrals: $3-$5 per signup
    ├── Level 2 (Indirect): $1-$2 per signup
    ├── Level 3 (Indirect): $0.50-$1 per signup
-   └── Agent Bonuses: 5-20% commission
+   └── Agent Bonuses: 5-35% commission
 
 2. TASK EARNINGS
    ├── Video Watching: $0.50-$2.50 per task

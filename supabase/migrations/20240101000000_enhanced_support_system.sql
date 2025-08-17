@@ -109,7 +109,7 @@ INSERT INTO support_knowledge_base (category, keywords, response_template, sugge
 (
     'agent_program',
     ARRAY['agent', 'influencer', 'program', 'milestone', 'commission'],
-    'The Agent Program offers enhanced earnings for content creators: 5-20% progressive weekly commissions, milestone bonuses, and priority withdrawals.',
+    'The Agent Program offers enhanced earnings for content creators: 5-35% progressive weekly commissions, milestone bonuses, and priority withdrawals.',
     ARRAY['Requirements', 'Commission rates', 'Application process', 'Benefits'],
     1
 ),
