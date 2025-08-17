@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { LogOut, User, Home, Crown, Megaphone, FileText, Calendar, Settings, Briefcase } from 'lucide-react';
+import { LogOut, User, Home, Crown, Megaphone, FileText, Calendar, Settings, Briefcase, Target, DollarSign } from 'lucide-react';
 import EarnProLogo from '../Logo/EarnProLogo';
 import SettingsModal from '../Settings/SettingsModal';
 
@@ -48,13 +48,27 @@ const Header: React.FC = () => {
 
   const colors = getThemeColors();
 
-  // Only show navigation items if user is authenticated AND has paid
+  // STRICT PAY-TO-ACCESS: Only show navigation if user has paid (except for test accounts)
   const getNavItems = () => {
-    if (!isAuthenticated || !user?.isPaidUser) return [];
+    if (!isAuthenticated) return [];
+    
+    // Test accounts - always show full navigation
+    const testEmails = [
+      'thearnest7@gmail.com',
+      'ijaydenspark@gmail.com', 
+      'princeedie142@gmail.com',
+      'noguyliketrey@gmail.com'
+    ];
+    
+    const isTestAccount = testEmails.includes(user?.email || '');
+    
+    // STRICT: For non-test accounts, MUST be paid to see any navigation
+    if (!isTestAccount && !user?.isPaidUser) return [];
 
     const baseItems = [
       { path: '/dashboard', label: 'Dashboard', icon: Home },
       { path: '/tasks', label: 'Tasks', icon: Calendar },
+      { path: '/leaderboard', label: 'Leaderboard', icon: Crown },
     ];
 
     if (user?.role === 'admin' || user?.role === 'superadmin') {

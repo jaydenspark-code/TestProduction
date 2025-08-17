@@ -1,2 +1,10 @@
-// Create a 192x192 PNG icon
-// For now, you can copy any existing icon or create a simple colored square
+<svg width="192" height="192" viewBox="0 0 192 192" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="192" height="192" rx="32" fill="url(#gradient)"/>
+  <text x="96" y="110" text-anchor="middle" fill="white" font-family="Arial, sans-serif" font-size="48" font-weight="bold">E</text>
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea"/>
+      <stop offset="100%" style="stop-color:#764ba2"/>
+    </linearGradient>
+  </defs>
+</svg>

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { MessageCircle, Send, X, Bot, User, HelpCircle } from 'lucide-react';
 import { ChatMessage } from '../../types';
 import { useAuth } from '../../context/AuthContext';
-import { supabase } from '../../lib/supabaseClient';
+import { supabase } from "../../lib/supabase";
 
 const ChatBot: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -27,7 +27,7 @@ const ChatBot: React.FC = () => {
     },
     'agent': {
       keywords: ['agent', 'influencer', 'program', 'commission'],
-      response: 'The EarnPro Agent Program is for influencers and content creators. Agents get progressive weekly commissions (5-20%), milestone bonuses, and increased withdrawal frequency. You need minimum followers on social platforms to apply.',
+      response: 'The EarnPro Agent Program is for influencers and content creators. Agents get progressive weekly commissions (5-20%), milestone bonuses, and priority withdrawal processing. You need minimum followers on social platforms to apply.',
       suggestions: ['Agent requirements', 'Commission rates', 'How to apply for agent program?']
     },
     'tasks': {
@@ -37,8 +37,8 @@ const ChatBot: React.FC = () => {
     },
     'payment': {
       keywords: ['payment', 'withdraw', 'money', 'earnings', 'payout'],
-      response: 'Payments are processed weekly for regular users. Agents can withdraw twice or thrice weekly based on milestones. We support multiple currencies and payment methods based on your country.',
-      suggestions: ['Withdrawal frequency', 'Payment methods', 'Minimum payout amount']
+      response: 'We now process payments daily! Once you reach the minimum withdrawal amount, you can request a payout and receive your earnings within 24 hours. We support multiple payment methods including PayPal, bank transfer, and cryptocurrency.',
+      suggestions: ['Payment methods', 'Minimum withdrawal amount', 'How to withdraw']
     },
     'registration': {
       keywords: ['register', 'signup', 'account', 'verify', 'activation'],

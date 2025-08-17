@@ -8,6 +8,8 @@ interface Message {
   isUser: boolean
   timestamp: Date
   isTyping?: boolean
+  suggestions?: string[]
+  confidence?: number
 }
 
 interface LiveSupportChatProps {
@@ -20,9 +22,10 @@ const LiveSupportChat: React.FC<LiveSupportChatProps> = ({ isOpen, onClose }) =>
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      content: 'Hi! I\'m your AI support assistant. I can help with account questions, technical issues, and platform guidance. How can I assist you today?',
+      content: `Hi${user?.fullName ? ` ${user.fullName.split(' ')[0]}` : ''}! 👋 I'm your EarnPro support assistant. I can help with referrals, tasks, payments, account issues, and general questions. What can I help you with today?`,
       isUser: false,
-      timestamp: new Date()
+      timestamp: new Date(),
+      suggestions: ['Referral system', 'Daily tasks', 'Payment methods', 'Account verification', 'Technical issues']
     }
   ])
   const [inputMessage, setInputMessage] = useState('')
@@ -50,74 +53,149 @@ const LiveSupportChat: React.FC<LiveSupportChatProps> = ({ isOpen, onClose }) =>
     }
 
     setMessages(prev => [...prev, userMessage])
+    const currentMessage = inputMessage.trim()
     setInputMessage('')
     setIsTyping(true)
 
     try {
-      // Check if message requires human support
-      const requiresHuman = await checkIfRequiresHumanSupport(inputMessage)
-      
-      if (requiresHuman && supportLevel === 'ai') {
+      // Enhanced AI chat with better context
+      const response = await fetch('/api/support/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: currentMessage,
+          userId: user?.id,
+          context: 'support',
+          previousMessages: messages.slice(-5).map(m => ({
+            id: m.id,
+            content: m.content,
+            isUser: m.isUser,
+            timestamp: m.timestamp
+          }))
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to get response')
+      }
+
+      const data = await response.json()
+
+      // Check if human escalation is needed
+      if (data.requiresHuman && supportLevel === 'ai') {
         setSupportLevel('human')
+        
+        // Add escalation message
         const escalationMessage: Message = {
           id: (Date.now() + 1).toString(),
-          content: 'I\'m connecting you with a human support agent for better assistance with this issue. Please hold on...',
+          content: data.response,
           isUser: false,
           timestamp: new Date()
         }
         setMessages(prev => [...prev, escalationMessage])
         
         // Notify human agents
-        await notifyHumanAgents(userMessage.content, user?.id)
+        await notifyHumanAgents(currentMessage, user?.id)
+        
+        // Add human agent connecting message
+        setTimeout(() => {
+          const connectingMessage: Message = {
+            id: (Date.now() + 2).toString(),
+            content: `🔄 Connecting you with a support agent... Average wait time: ${getEstimatedWaitTime()}`,
+            isUser: false,
+            timestamp: new Date()
+          }
+          setMessages(prev => [...prev, connectingMessage])
+        }, 1000)
+        
         setIsTyping(false)
         return
       }
 
-      // Get AI response
-      const response = await fetch('/api/support/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          message: inputMessage,
-          userId: user?.id,
-          context: 'support',
-          previousMessages: messages.slice(-5) // Last 5 messages for context
-        })
-      })
-
-      const data = await response.json()
-
+      // Add AI response with suggestions
       const aiMessage: Message = {
         id: (Date.now() + 2).toString(),
         content: data.response,
         isUser: false,
-        timestamp: new Date()
+        timestamp: new Date(),
+        suggestions: data.suggestions,
+        confidence: data.confidence
       }
 
       setMessages(prev => [...prev, aiMessage])
+      
+      // Show confidence indicator for low confidence responses
+      if (data.confidence < 0.7) {
+        setTimeout(() => {
+          const followUpMessage: Message = {
+            id: (Date.now() + 3).toString(),
+            content: "I'm not completely sure about this answer. Would you like me to connect you with a human agent for more accurate assistance?",
+            isUser: false,
+            timestamp: new Date(),
+            suggestions: ['Yes, connect me', 'No, that helps', 'Try different question', 'Contact support']
+          }
+          setMessages(prev => [...prev, followUpMessage])
+        }, 2000)
+      }
+      
     } catch (error) {
       console.error('Support chat error:', error)
       const errorMessage: Message = {
         id: (Date.now() + 3).toString(),
-        content: 'I\'m experiencing technical difficulties. Please try again or contact support directly.',
+        content: '❌ I\'m experiencing technical difficulties. Let me connect you with a human agent who can help you right away.',
         isUser: false,
-        timestamp: new Date()
+        timestamp: new Date(),
+        suggestions: ['Connect with agent', 'Try again', 'Email support', 'Call support']
       }
       setMessages(prev => [...prev, errorMessage])
+      
+      // Auto-escalate on technical failures
+      setSupportLevel('human')
+      await notifyHumanAgents(currentMessage, user?.id)
     } finally {
       setIsTyping(false)
     }
   }
 
-  const checkIfRequiresHumanSupport = async (message: string): Promise<boolean> => {
-    const humanRequiredKeywords = [
-      'account locked', 'payment failed', 'money missing', 'fraud', 'scam',
-      'legal issue', 'complaint', 'refund', 'dispute', 'urgent', 'emergency'
-    ]
+  const getEstimatedWaitTime = (): string => {
+    const hour = new Date().getHours()
+    // Business hours: shorter wait times
+    if (hour >= 9 && hour <= 17) {
+      return '2-5 minutes'
+    }
+    // After hours: longer wait times
+    return '5-15 minutes'
+  }
+
+  const handleSuggestionClick = (suggestion: string) => {
+    if (suggestion === 'Yes, connect me' || suggestion === 'Connect with agent') {
+      setSupportLevel('human')
+      const connectingMessage: Message = {
+        id: Date.now().toString(),
+        content: '🔄 Connecting you with a human support agent. Please hold on...',
+        isUser: false,
+        timestamp: new Date()
+      }
+      setMessages(prev => [...prev, connectingMessage])
+      notifyHumanAgents('User requested human agent connection', user?.id)
+      return
+    }
     
-    return humanRequiredKeywords.some(keyword => 
-      message.toLowerCase().includes(keyword)
-    )
+    if (suggestion === 'No, that helps') {
+      const thankYouMessage: Message = {
+        id: Date.now().toString(),
+        content: '😊 Great! I\'m glad I could help. Is there anything else you\'d like to know about EarnPro?',
+        isUser: false,
+        timestamp: new Date(),
+        suggestions: ['Referral help', 'Task questions', 'Payment info', 'Account settings']
+      }
+      setMessages(prev => [...prev, thankYouMessage])
+      return
+    }
+    
+    // Handle other suggestions by sending as message
+    setInputMessage(suggestion)
+    handleSendMessage()
   }
 
   const notifyHumanAgents = async (message: string, userId?: string) => {
@@ -187,17 +265,41 @@ const LiveSupportChat: React.FC<LiveSupportChatProps> = ({ isOpen, onClose }) =>
                       <Bot className="w-4 h-4 text-blue-600" />
                     </div>
                   )}
-                  <div
-                    className={`max-w-xs px-3 py-2 rounded-lg ${
-                      message.isUser
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}
-                  >
-                    <p className="text-sm">{message.content}</p>
-                    <p className="text-xs opacity-70 mt-1">
-                      {message.timestamp.toLocaleTimeString()}
-                    </p>
+                  <div className="flex flex-col max-w-xs">
+                    <div
+                      className={`px-3 py-2 rounded-lg ${
+                        message.isUser
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}
+                    >
+                      <p className="text-sm">{message.content}</p>
+                      <div className="flex items-center justify-between mt-1">
+                        <p className="text-xs opacity-70">
+                          {message.timestamp.toLocaleTimeString()}
+                        </p>
+                        {!message.isUser && message.confidence && message.confidence < 0.8 && (
+                          <span className="text-xs bg-yellow-100 text-yellow-800 px-1 rounded">
+                            ~{Math.round(message.confidence * 100)}%
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    
+                    {/* Suggestions */}
+                    {!message.isUser && message.suggestions && (
+                      <div className="mt-2 space-y-1">
+                        {message.suggestions.map((suggestion, index) => (
+                          <button
+                            key={index}
+                            onClick={() => handleSuggestionClick(suggestion)}
+                            className="block w-full text-left text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 hover:text-blue-900 px-3 py-2 rounded-lg border border-blue-200 transition-colors"
+                          >
+                            💡 {suggestion}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   {message.isUser && (
                     <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">

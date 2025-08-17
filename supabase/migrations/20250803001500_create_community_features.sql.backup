@@ -1,0 +1,273 @@
+-- =====================================================
+-- Community Features Database Schema
+-- =====================================================
+
+-- Success Stories Table
+CREATE TABLE success_stories (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    category VARCHAR(50) NOT NULL CHECK (category IN ('earnings', 'referrals', 'growth', 'milestone', 'achievement')),
+    metrics JSONB DEFAULT '{}',
+    image_url TEXT,
+    likes INTEGER DEFAULT 0,
+    comments INTEGER DEFAULT 0,
+    shares INTEGER DEFAULT 0,
+    is_verified BOOLEAN DEFAULT FALSE,
+    is_featured BOOLEAN DEFAULT FALSE,
+    tags TEXT[] DEFAULT '{}',
+    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'hidden', 'pending_review')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Community Challenges Table
+CREATE TABLE community_challenges (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    title VARCHAR(255) NOT NULL,
+    description TEXT NOT NULL,
+    type VARCHAR(50) NOT NULL CHECK (type IN ('referral', 'earnings', 'tasks', 'social', 'streak')),
+    difficulty VARCHAR(20) NOT NULL CHECK (difficulty IN ('easy', 'medium', 'hard')),
+    status VARCHAR(20) DEFAULT 'upcoming' CHECK (status IN ('upcoming', 'active', 'completed', 'expired')),
+    start_date TIMESTAMP WITH TIME ZONE NOT NULL,
+    end_date TIMESTAMP WITH TIME ZONE NOT NULL,
+    max_participants INTEGER,
+    requirements JSONB NOT NULL,
+    rewards JSONB NOT NULL,
+    created_by UUID REFERENCES users(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Challenge Participants Table
+CREATE TABLE challenge_participants (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    challenge_id UUID NOT NULL REFERENCES community_challenges(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    current_progress DECIMAL(10,2) DEFAULT 0,
+    rank INTEGER,
+    is_completed BOOLEAN DEFAULT FALSE,
+    completed_at TIMESTAMP WITH TIME ZONE,
+    joined_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(challenge_id, user_id)
+);
+
+-- User Reviews Table
+CREATE TABLE user_reviews (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    rating INTEGER NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    category VARCHAR(50) NOT NULL CHECK (category IN ('platform', 'support', 'earnings', 'community', 'features')),
+    tags TEXT[] DEFAULT '{}',
+    likes INTEGER DEFAULT 0,
+    dislikes INTEGER DEFAULT 0,
+    views INTEGER DEFAULT 0,
+    is_helpful BOOLEAN DEFAULT FALSE,
+    is_featured BOOLEAN DEFAULT FALSE,
+    status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'hidden', 'pending_review')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Review Responses Table
+CREATE TABLE review_responses (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    review_id UUID NOT NULL REFERENCES user_reviews(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    content TEXT NOT NULL,
+    is_admin_response BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- User Achievements Table
+CREATE TABLE user_achievements (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    achievement_type VARCHAR(100) NOT NULL,
+    achievement_name VARCHAR(255) NOT NULL,
+    achievement_description TEXT,
+    achievement_icon TEXT,
+    achievement_level VARCHAR(20) NOT NULL CHECK (achievement_level IN ('bronze', 'silver', 'gold', 'platinum', 'diamond')),
+    points_earned INTEGER DEFAULT 0,
+    metadata JSONB DEFAULT '{}',
+    earned_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(user_id, achievement_type, achievement_level)
+);
+
+-- User Badges Table
+CREATE TABLE user_badges (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    badge_type VARCHAR(100) NOT NULL,
+    badge_name VARCHAR(255) NOT NULL,
+    badge_description TEXT,
+    badge_icon TEXT,
+    badge_color VARCHAR(20) DEFAULT 'blue',
+    earned_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    expires_at TIMESTAMP WITH TIME ZONE,
+    is_active BOOLEAN DEFAULT TRUE,
+    UNIQUE(user_id, badge_type)
+);
+
+-- Story Likes Table
+CREATE TABLE story_likes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    story_id UUID NOT NULL REFERENCES success_stories(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(story_id, user_id)
+);
+
+-- Review Likes Table
+CREATE TABLE review_likes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    review_id UUID NOT NULL REFERENCES user_reviews(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    is_like BOOLEAN NOT NULL, -- true for like, false for dislike
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(review_id, user_id)
+);
+
+-- Create indexes for better performance
+CREATE INDEX idx_success_stories_user_id ON success_stories(user_id);
+CREATE INDEX idx_success_stories_category ON success_stories(category);
+CREATE INDEX idx_success_stories_created_at ON success_stories(created_at DESC);
+CREATE INDEX idx_success_stories_status ON success_stories(status);
+
+CREATE INDEX idx_community_challenges_status ON community_challenges(status);
+CREATE INDEX idx_community_challenges_type ON community_challenges(type);
+CREATE INDEX idx_community_challenges_dates ON community_challenges(start_date, end_date);
+
+CREATE INDEX idx_challenge_participants_challenge_id ON challenge_participants(challenge_id);
+CREATE INDEX idx_challenge_participants_user_id ON challenge_participants(user_id);
+CREATE INDEX idx_challenge_participants_rank ON challenge_participants(challenge_id, rank);
+
+CREATE INDEX idx_user_reviews_user_id ON user_reviews(user_id);
+CREATE INDEX idx_user_reviews_category ON user_reviews(category);
+CREATE INDEX idx_user_reviews_rating ON user_reviews(rating);
+CREATE INDEX idx_user_reviews_created_at ON user_reviews(created_at DESC);
+
+CREATE INDEX idx_user_achievements_user_id ON user_achievements(user_id);
+CREATE INDEX idx_user_achievements_type ON user_achievements(achievement_type);
+
+CREATE INDEX idx_user_badges_user_id ON user_badges(user_id);
+CREATE INDEX idx_user_badges_active ON user_badges(user_id, is_active);
+
+-- Create triggers for updated_at columns
+CREATE TRIGGER update_success_stories_updated_at 
+    BEFORE UPDATE ON success_stories
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_community_challenges_updated_at 
+    BEFORE UPDATE ON community_challenges
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_user_reviews_updated_at 
+    BEFORE UPDATE ON user_reviews
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Row Level Security (RLS) Policies
+ALTER TABLE success_stories ENABLE ROW LEVEL SECURITY;
+ALTER TABLE community_challenges ENABLE ROW LEVEL SECURITY;
+ALTER TABLE challenge_participants ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_reviews ENABLE ROW LEVEL SECURITY;
+ALTER TABLE review_responses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_achievements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE user_badges ENABLE ROW LEVEL SECURITY;
+ALTER TABLE story_likes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE review_likes ENABLE ROW LEVEL SECURITY;
+
+-- Success Stories Policies
+CREATE POLICY "Public can view active success stories" ON success_stories
+    FOR SELECT USING (status = 'active');
+
+CREATE POLICY "Users can create own success stories" ON success_stories
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own success stories" ON success_stories
+    FOR UPDATE USING (auth.uid() = user_id);
+
+-- Community Challenges Policies
+CREATE POLICY "Public can view active challenges" ON community_challenges
+    FOR SELECT USING (status IN ('active', 'upcoming'));
+
+CREATE POLICY "Admins can manage challenges" ON community_challenges
+    FOR ALL USING (
+        EXISTS (
+            SELECT 1 FROM users 
+            WHERE users.id = auth.uid() 
+            AND users.role IN ('admin', 'superadmin')
+        )
+    );
+
+-- Challenge Participants Policies
+CREATE POLICY "Users can view challenge participants" ON challenge_participants
+    FOR SELECT USING (TRUE);
+
+CREATE POLICY "Users can join challenges" ON challenge_participants
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own participation" ON challenge_participants
+    FOR UPDATE USING (auth.uid() = user_id);
+
+-- User Reviews Policies
+CREATE POLICY "Public can view active reviews" ON user_reviews
+    FOR SELECT USING (status = 'active');
+
+CREATE POLICY "Users can create own reviews" ON user_reviews
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own reviews" ON user_reviews
+    FOR UPDATE USING (auth.uid() = user_id);
+
+-- Review Responses Policies
+CREATE POLICY "Public can view review responses" ON review_responses
+    FOR SELECT USING (TRUE);
+
+CREATE POLICY "Users can create review responses" ON review_responses
+    FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+-- User Achievements Policies
+CREATE POLICY "Users can view own achievements" ON user_achievements
+    FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "System can create achievements" ON user_achievements
+    FOR INSERT WITH CHECK (TRUE);
+
+-- User Badges Policies
+CREATE POLICY "Users can view own badges" ON user_badges
+    FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "System can create badges" ON user_badges
+    FOR INSERT WITH CHECK (TRUE);
+
+-- Likes Policies
+CREATE POLICY "Users can manage own likes" ON story_likes
+    FOR ALL USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can manage own review likes" ON review_likes
+    FOR ALL USING (auth.uid() = user_id);
+
+-- Insert some sample data
+INSERT INTO community_challenges (title, description, type, difficulty, status, start_date, end_date, requirements, rewards) VALUES
+('Welcome Challenge', 'Complete your first referral to get started!', 'referral', 'easy', 'active', 
+ NOW(), NOW() + INTERVAL '30 days',
+ '{"target": 1, "metric": "referrals", "timeframe": "30 days"}',
+ '{"first": {"amount": 50, "badge": "First Referral"}, "participation": {"amount": 10, "badge": "Challenger"}}'),
+ 
+('Monthly Earnings Goal', 'Earn $100 this month', 'earnings', 'medium', 'active',
+ DATE_TRUNC('month', NOW()), DATE_TRUNC('month', NOW()) + INTERVAL '1 month',
+ '{"target": 100, "metric": "dollars earned", "timeframe": "1 month"}',
+ '{"first": {"amount": 200, "badge": "Top Earner"}, "second": {"amount": 100, "badge": "Great Earner"}, "participation": {"amount": 25, "badge": "Monthly Participant"}}');
+
+-- Insert some sample achievements
+INSERT INTO user_achievements (user_id, achievement_type, achievement_name, achievement_description, achievement_level, points_earned)
+SELECT id, 'first_referral', 'First Referral', 'Made your first successful referral', 'bronze', 100
+FROM users LIMIT 1;
+
+INSERT INTO user_badges (user_id, badge_type, badge_name, badge_description, badge_color)
+SELECT id, 'newcomer', 'Welcome to EarnPro', 'New member badge', 'blue'
+FROM users LIMIT 1;

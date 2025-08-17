@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from "../lib/supabase";
 import { aiAnalyticsAPI } from '../api/ai';
 import { recommendationAPI } from '../api/ai';
 import { smartMatchingAPI } from '../api/ai';
@@ -22,8 +22,6 @@ export interface PersonalizationProfile {
     targetAudience: string[];
     industries: string[];
     roles: string[];
-    smsNotifications: boolean;
-    withdrawalAlerts: boolean;
   };
   behavior: {
     loginFrequency: number;
@@ -52,7 +50,6 @@ export interface PersonalizationProfile {
     colorScheme: 'light' | 'dark' | 'auto';
     language: string;
     timezone: string;
-    theme: string;
   };
   updatedAt: string;
 }
@@ -302,26 +299,12 @@ class PersonalizationService {
   }
 
   // Update user preferences
-  async updateUserPreferences(userId: string, preferences: Partial<PersonalizationProfile['preferences']>, customization?: Partial<PersonalizationProfile['customization']>, basicInfo?: Partial<PersonalizationProfile['basicInfo']>): Promise<void> {
+  async updateUserPreferences(userId: string, preferences: Partial<PersonalizationProfile['preferences']>): Promise<void> {
     try {
       const profile = await this.getUserProfile(userId);
       
       // Update preferences
-      if (preferences) {
-        Object.assign(profile.preferences, preferences);
-      }
-
-      // Update customization
-      if (customization) {
-        Object.assign(profile.customization, customization);
-      }
-
-      // Update basic info
-      if (basicInfo) {
-        Object.assign(profile.basicInfo, basicInfo);
-      }
-
-      profile.updatedAt = new Date().toISOString();
+      Object.assign(profile.preferences, preferences);
       
       // Save to database
       await this.saveUserProfile(profile);
@@ -329,13 +312,11 @@ class PersonalizationService {
       // Update cache
       this.userProfiles.set(userId, profile);
       
-      // Update AI recommendation model only if preferences changed
-      if (preferences) {
-        await recommendationAPI.updateUserPreferences(userId, preferences);
-      }
+      // Update AI recommendation model
+      await recommendationAPI.updateUserPreferences(userId, preferences);
     } catch (error) {
-      console.error('Error updating user profile:', error);
-      throw new Error('Failed to update user profile');
+      console.error('Error updating user preferences:', error);
+      throw new Error('Failed to update user preferences');
     }
   }
 

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EarnPro - Loading Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            padding: 2rem;
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+        }
+        .loading {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .status {
+            margin-top: 1rem;
+            font-size: 14px;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="loading"></div>
+        <h1>EarnPro</h1>
+        <p>Loading application...</p>
+        <div class="status">Testing server connectivity</div>
+    </div>
+    
+    <script>
+        console.log('🔍 Testing EarnPro server connectivity...');
+        console.log('Server URL:', window.location.origin);
+        console.log('Current time:', new Date().toISOString());
+        
+        // Test if the React app can load
+        setTimeout(() => {
+            console.log('✅ Basic HTML loaded successfully');
+            
+            // Try to load the main React app
+            const script = document.createElement('script');
+            script.type = 'module';
+            script.src = '/src/main.tsx';
+            script.onload = () => {
+                console.log('✅ Main React script loaded');
+            };
+            script.onerror = (error) => {
+                console.error('❌ Failed to load React script:', error);
+                document.querySelector('.status').innerHTML = '❌ Failed to load React application. Check console for details.';
+            };
+            document.head.appendChild(script);
+        }, 1000);
+    </script>
+</body>
+</html>

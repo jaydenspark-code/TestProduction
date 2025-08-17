@@ -4,7 +4,7 @@ import realtimeService, {
   RealtimeStats, 
   NotificationEvent 
 } from '../services/realtimeService';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from '../context/AuthContext';
 
 export interface UseRealtimeOptions {
   enableStats?: boolean;

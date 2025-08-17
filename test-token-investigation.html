@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔧 Token Format Investigation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .test-button {
+            background: #4CAF50;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        .test-button:hover {
+            background: #45a049;
+        }
+        #braintree-container {
+            margin-top: 20px;
+            min-height: 300px;
+            border: 3px solid #4CAF50;
+            border-radius: 8px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f9f9f9, #ffffff);
+        }
+        .log {
+            background: #1e1e1e;
+            color: #f0f0f0;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .investigation-section {
+            background: #fff3cd;
+            padding: 20px;
+            margin: 15px 0;
+            border-radius: 8px;
+            border-left: 4px solid #ffc107;
+        }
+        .token-display {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 11px;
+            word-break: break-all;
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #dee2e6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Token Format Investigation</h1>
+        
+        <div class="investigation-section">
+            <h2>🔍 Problem Analysis</h2>
+            <p><strong>Issue:</strong> The API is returning a decoded JSON object, but Braintree expects a base64-encoded token.</p>
+            <p><strong>Root Cause:</strong> The token should be base64-encoded before being used in Drop-in authorization.</p>
+            <p><strong>Solution:</strong> We need to base64-encode the JSON token ourselves.</p>
+        </div>
+        
+        <div id="status" class="status info">
+            Ready to investigate and fix token format...
+        </div>
+        
+        <button class="test-button" onclick="investigateTokenFormat()">🔍 Investigate Token Format</button>
+        <button class="test-button" onclick="testWithEncodedToken()">🔧 Test Base64 Encoded Token</button>
+        <button class="test-button" onclick="testWithTokenizationKey()">🗝️ Try Tokenization Key</button>
+        <button class="test-button" onclick="clearLog()">🧹 Clear Log</button>
+        
+        <div id="log" class="log">Token format investigation - logs will appear here...</div>
+        
+        <div id="token-analysis" style="display: none;">
+            <h3>🔍 Token Analysis</h3>
+            <div>
+                <h4>Raw Token (from API):</h4>
+                <div id="raw-token" class="token-display"></div>
+            </div>
+            <div>
+                <h4>Base64 Encoded Token:</h4>
+                <div id="encoded-token" class="token-display"></div>
+            </div>
+        </div>
+        
+        <div id="braintree-container">
+            <h3>🎨 Braintree Drop-in Container</h3>
+            <p>Different token format tests will render here.</p>
+        </div>
+    </div>
+
+    <script type="module">
+        // Enhanced logging system
+        const logDiv = document.getElementById('log');
+        const statusDiv = document.getElementById('status');
+        
+        function addToLog(message, type = 'info', detail = null) {
+            const timestamp = new Date().toISOString().substring(11, 23);
+            let color = '#f0f0f0';
+            let icon = '📝';
+            
+            switch(type) {
+                case 'error': color = '#ff6b6b'; icon = '❌'; break;
+                case 'success': color = '#4CAF50'; icon = '✅'; break;
+                case 'warning': color = '#ffeb3b'; icon = '⚠️'; break;
+                case 'info': color = '#87CEEB'; icon = '💡'; break;
+                case 'debug': color = '#DDA0DD'; icon = '🔍'; break;
+            }
+            
+            let logEntry = `<div style="color: ${color}; margin: 2px 0;">[${timestamp}] ${icon} ${message}</div>`;
+            
+            if (detail) {
+                logEntry += `<div style="color: #ccc; font-size: 11px; margin-left: 20px; white-space: pre-wrap;">${JSON.stringify(detail, null, 2)}</div>`;
+            }
+            
+            logDiv.innerHTML += logEntry;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        window.clearLog = function() {
+            logDiv.innerHTML = 'Log cleared - ready for token format investigation...';
+            statusDiv.className = 'status info';
+            statusDiv.textContent = 'Ready for token investigation';
+        };
+
+        // Global variables
+        let dropinModule = null;
+        let dropinInstance = null;
+        let rawToken = null;
+
+        // Import the Drop-in module
+        try {
+            dropinModule = await import('braintree-web-drop-in');
+            addToLog('✅ NPM braintree-web-drop-in imported successfully', 'success');
+        } catch (error) {
+            addToLog('❌ Failed to import braintree-web-drop-in', 'error', error);
+        }
+
+        // Get raw token from API
+        async function getRawTokenFromAPI() {
+            const credentials = btoa('sgfjmfv929kzffsr:4edc8a7489369f8e7d5cb8c9a8066c17');
+            const requestBody = `<?xml version="1.0" encoding="UTF-8"?><client-token></client-token>`;
+            const apiUrl = 'https://api.sandbox.braintreegateway.com/merchants/2yhrvbtjszdbvxtt/client_token';
+            
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Basic ${credentials}`,
+                    'Content-Type': 'application/xml',
+                    'Accept': 'application/xml',
+                    'Braintree-Version': '2019-01-01'
+                },
+                body: requestBody
+            });
+            
+            if (!response.ok) {
+                throw new Error(`API error: ${response.status} ${response.statusText}`);
+            }
+            
+            const responseText = await response.text();
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(responseText, 'text/xml');
+            const clientTokenElement = xmlDoc.querySelector('client-token');
+            
+            if (!clientTokenElement) {
+                throw new Error('No client token found in response');
+            }
+            
+            return clientTokenElement.textContent.trim();
+        }
+
+        // Investigation function
+        window.investigateTokenFormat = async function() {
+            addToLog('🔍 INVESTIGATING TOKEN FORMAT...', 'info');
+            
+            try {
+                addToLog('📡 Getting raw token from Braintree API...', 'debug');
+                rawToken = await getRawTokenFromAPI();
+                
+                addToLog(`✅ Raw token received (${rawToken.length} characters)`, 'success');
+                addToLog(`🔑 Token starts with: ${rawToken.substring(0, 30)}...`, 'debug');
+                
+                // Check if it's JSON
+                let isJSON = false;
+                let jsonData = null;
+                try {
+                    jsonData = JSON.parse(rawToken);
+                    isJSON = true;
+                    addToLog('🔍 Token is valid JSON object', 'warning');
+                } catch (e) {
+                    addToLog('🔍 Token is NOT JSON - checking if base64...', 'info');
+                }
+                
+                if (isJSON) {
+                    addToLog('📊 Token JSON structure:', 'debug', {
+                        version: jsonData.version,
+                        hasAuthFingerprint: !!jsonData.authorizationFingerprint,
+                        hasConfigUrl: !!jsonData.configUrl,
+                        environment: jsonData.environment
+                    });
+                    
+                    // This is the problem - we need to base64 encode this
+                    const encodedToken = btoa(rawToken);
+                    addToLog(`🔧 Base64 encoded token (${encodedToken.length} characters)`, 'info');
+                    addToLog(`🔑 Encoded starts with: ${encodedToken.substring(0, 30)}...`, 'debug');
+                    
+                    // Display analysis
+                    document.getElementById('token-analysis').style.display = 'block';
+                    document.getElementById('raw-token').textContent = rawToken;
+                    document.getElementById('encoded-token').textContent = encodedToken;
+                    
+                    addToLog('💡 SOLUTION: We need to base64-encode the JSON token!', 'success');
+                    
+                } else {
+                    // Try to decode as base64
+                    try {
+                        const decoded = atob(rawToken);
+                        const parsed = JSON.parse(decoded);
+                        addToLog('✅ Token is already properly base64 encoded', 'success');
+                        addToLog('📊 Decoded content structure:', 'debug', {
+                            version: parsed.version,
+                            environment: parsed.environment
+                        });
+                    } catch (e) {
+                        addToLog('❌ Token is neither JSON nor valid base64', 'error');
+                    }
+                }
+                
+                statusDiv.className = 'status info';
+                statusDiv.textContent = '🔍 Token format investigation complete';
+                
+            } catch (error) {
+                addToLog('❌ Token investigation failed', 'error', error);
+                statusDiv.className = 'status error';
+                statusDiv.textContent = '❌ Investigation failed';
+            }
+        };
+
+        // Test with base64 encoded token
+        window.testWithEncodedToken = async function() {
+            addToLog('🔧 TESTING WITH BASE64 ENCODED TOKEN...', 'info');
+            
+            try {
+                if (!rawToken) {
+                    addToLog('📡 Getting raw token first...', 'debug');
+                    rawToken = await getRawTokenFromAPI();
+                }
+                
+                // Base64 encode the JSON token
+                const encodedToken = btoa(rawToken);
+                addToLog(`🔧 Using base64 encoded token (${encodedToken.length} characters)`, 'success');
+                addToLog(`🔑 Encoded token: ${encodedToken.substring(0, 50)}...`, 'debug');
+                
+                // Clear container
+                const container = document.getElementById('braintree-container');
+                container.innerHTML = '<h3>🔧 Creating Drop-in with base64 encoded token...</h3>';
+                
+                // Create Drop-in with encoded token
+                const dropinConfig = {
+                    authorization: encodedToken,  // Base64 encoded!
+                    container: '#braintree-container',
+                    card: {
+                        cardholderName: { required: false }
+                    }
+                };
+                
+                addToLog('🎨 Creating Drop-in with encoded authorization...', 'debug');
+                
+                dropinInstance = await new Promise((resolve, reject) => {
+                    const timeout = setTimeout(() => {
+                        reject(new Error('Drop-in creation timed out'));
+                    }, 30000);
+                    
+                    dropinModule.create(dropinConfig, (createError, instance) => {
+                        clearTimeout(timeout);
+                        
+                        if (createError) {
+                            addToLog('❌ Drop-in creation failed with encoded token', 'error', createError);
+                            reject(createError);
+                        } else {
+                            addToLog('🎉 SUCCESS! Drop-in created with encoded token!', 'success');
+                            resolve(instance);
+                        }
+                    });
+                });
+                
+                // Success!
+                const successMsg = document.createElement('div');
+                successMsg.innerHTML = `
+                    <div style="background: linear-gradient(135deg, #4CAF50, #45a049); color: white; padding: 20px; margin: 20px 0; border-radius: 8px; text-align: center;">
+                        🎉 <strong>TOKEN FORMAT FIXED!</strong> 🎉<br>
+                        Drop-in working with base64 encoded token!<br>
+                        <small>Solution: JSON token needs to be base64 encoded</small>
+                    </div>
+                `;
+                container.appendChild(successMsg);
+                
+                statusDiv.className = 'status success';
+                statusDiv.textContent = '🎉 SUCCESS! Base64 encoding fixed the issue!';
+                
+            } catch (error) {
+                addToLog('❌ Base64 encoding test failed', 'error', error);
+                
+                if (error.message.includes('CLIENT_INVALID_AUTHORIZATION')) {
+                    addToLog('🔍 Still getting authorization error - may need different approach', 'warning');
+                } else {
+                    addToLog('🔍 Different error - investigating further...', 'warning');
+                }
+                
+                statusDiv.className = 'status error';
+                statusDiv.textContent = '❌ Base64 encoding test failed';
+            }
+        };
+
+        // Try with tokenization key instead
+        window.testWithTokenizationKey = async function() {
+            addToLog('🗝️ TESTING WITH TOKENIZATION KEY APPROACH...', 'info');
+            
+            try {
+                // Braintree also supports tokenization keys instead of client tokens
+                // Let's try using the public key directly
+                const tokenizationKey = 'sgfjmfv929kzffsr'; // This is our public key
+                
+                addToLog('🔑 Using tokenization key instead of client token', 'info');
+                addToLog(`🔑 Tokenization key: ${tokenizationKey}`, 'debug');
+                
+                // Clear container
+                const container = document.getElementById('braintree-container');
+                container.innerHTML = '<h3>🗝️ Creating Drop-in with tokenization key...</h3>';
+                
+                // Create Drop-in with tokenization key
+                const dropinConfig = {
+                    authorization: tokenizationKey,  // Use public key directly
+                    container: '#braintree-container',
+                    card: {
+                        cardholderName: { required: false }
+                    }
+                };
+                
+                addToLog('🎨 Creating Drop-in with tokenization key...', 'debug');
+                
+                dropinInstance = await new Promise((resolve, reject) => {
+                    const timeout = setTimeout(() => {
+                        reject(new Error('Drop-in creation timed out'));
+                    }, 30000);
+                    
+                    dropinModule.create(dropinConfig, (createError, instance) => {
+                        clearTimeout(timeout);
+                        
+                        if (createError) {
+                            addToLog('❌ Drop-in creation failed with tokenization key', 'error', createError);
+                            reject(createError);
+                        } else {
+                            addToLog('🎉 SUCCESS! Drop-in created with tokenization key!', 'success');
+                            resolve(instance);
+                        }
+                    });
+                });
+                
+                // Success!
+                const successMsg = document.createElement('div');
+                successMsg.innerHTML = `
+                    <div style="background: linear-gradient(135deg, #2196F3, #1976D2); color: white; padding: 20px; margin: 20px 0; border-radius: 8px; text-align: center;">
+                        🎉 <strong>TOKENIZATION KEY WORKS!</strong> 🎉<br>
+                        Drop-in working with public key directly!<br>
+                        <small>Alternative: Use tokenization key instead of client token</small>
+                    </div>
+                `;
+                container.appendChild(successMsg);
+                
+                statusDiv.className = 'status success';
+                statusDiv.textContent = '🎉 SUCCESS! Tokenization key approach worked!';
+                
+            } catch (error) {
+                addToLog('❌ Tokenization key test failed', 'error', error);
+                statusDiv.className = 'status error';
+                statusDiv.textContent = '❌ Tokenization key test failed';
+            }
+        };
+
+        // Initialize
+        addToLog('🔧 Token format investigation loaded', 'info');
+        addToLog('📋 Available tests:', 'info');
+        addToLog('  1. Investigate Token Format - Analyze the raw token', 'info');
+        addToLog('  2. Test Base64 Encoded - Encode JSON token to base64', 'info');
+        addToLog('  3. Try Tokenization Key - Use public key directly', 'info');
+        addToLog('🚀 Start with "Investigate Token Format" to analyze the issue', 'info');
+    </script>
+</body>
+</html>

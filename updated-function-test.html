@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Updated Function Test - With URL Parameter Auth</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .url-box { background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 5px; word-break: break-all; border-left: 4px solid #28a745; }
+        button { padding: 10px 20px; margin: 5px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #218838; }
+    </style>
+</head>
+<body>
+    <h1>🔄 Testing Updated Edge Function</h1>
+    
+    <div class="info">
+        <h3>🆕 What Changed:</h3>
+        <p>✅ Function now accepts anon key as URL parameter ('key=...')</p>
+        <p>✅ No more "Missing authorization header" for email links</p>
+        <p>✅ Works directly from email without needing HTTP headers</p>
+    </div>
+
+    <h2>🧪 Test the Updated Function:</h2>
+    
+    <div class="url-box">
+        <strong>Test URL with anon key parameter:</strong><br>
+        <a href="https://bmtaqilpuszwoshtizmq.supabase.co/functions/v1/verify-email?token=test&key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJtdGFxaWxwdXN6d29zaHRpem1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwOTQwNjQsImV4cCI6MjA2ODY3MDA2NH0.QdtF2IFukonNWslwkUV1oQbpYBgdYhtekvjCywKR0vA" target="_blank" id="testUrl">
+            Click to Test Updated Function
+        </a>
+    </div>
+    
+    <button onclick="testUpdatedFunction()">🚀 Test in New Tab</button>
+    <button onclick="testWithFetch()">🔍 Test with Fetch API</button>
+    <button onclick="showEmailTemplate()">📧 Show Email Template</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const TEST_URL = 'https://bmtaqilpuszwoshtizmq.supabase.co/functions/v1/verify-email?token=test&key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJtdGFxaWxwdXN6d29zaHRpem1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwOTQwNjQsImV4cCI6MjA2ODY3MDA2NH0.QdtF2IFukonNWslwkUV1oQbpYBgdYhtekvjCywKR0vA';
+        
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = type;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}:</strong> ${message}`;
+            results.appendChild(div);
+        }
+
+        function testUpdatedFunction() {
+            addResult('🔄 Opening updated function URL in new tab...', 'info');
+            window.open(TEST_URL, '_blank');
+            addResult('🎯 Expected: Should now show verification page instead of authorization error!', 'success');
+        }
+
+        async function testWithFetch() {
+            addResult('🔄 Testing updated function with fetch...', 'info');
+            
+            try {
+                const response = await fetch(TEST_URL, {
+                    method: 'GET'
+                });
+                
+                addResult(`📡 Response Status: ${response.status} ${response.statusText}`, response.ok ? 'success' : 'error');
+                
+                const text = await response.text();
+                
+                if (response.ok) {
+                    if (text.includes('Email Verified') || text.includes('Verification Failed')) {
+                        addResult('🎉 SUCCESS! Function now works with URL parameter authentication!', 'success');
+                    } else {
+                        addResult(`📋 Response contains: ${text.substring(0, 200)}...`, 'info');
+                    }
+                } else if (response.status === 401) {
+                    addResult('⚠️ Still getting 401 - function might need a moment to update', 'error');
+                } else {
+                    addResult(`📋 Unexpected response: ${text.substring(0, 200)}...`, 'error');
+                }
+                
+            } catch (error) {
+                addResult(`❌ Network Error: ${error.message}`, 'error');
+            }
+        }
+
+        function showEmailTemplate() {
+            addResult(`
+                <h3>📧 Updated SendGrid Email Template:</h3>
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; font-family: monospace;">
+                <strong>Working verification URL for emails:</strong><br><br>
+                https://bmtaqilpuszwoshtizmq.supabase.co/functions/v1/verify-email?token={{verification_token}}&key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJtdGFxaWxwdXN6d29zaHRpem1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwOTQwNjQsImV4cCI6MjA2ODY3MDA2NH0.QdtF2IFukonNWslwkUV1oQbpYBgdYhtekvjCywKR0vA
+                </div>
+                <p>✅ This URL will work directly in emails without requiring any headers!</p>
+            `, 'success');
+        }
+
+        window.onload = function() {
+            addResult('🆕 Function updated! The Edge Function now accepts authentication via URL parameter. Test it now!', 'success');
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Container Test - Braintree Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #1a1a1a; color: white; }
+        .container { border: 2px solid #333; padding: 20px; margin: 20px 0; min-height: 200px; background: #2a2a2a; }
+        .button { background: #4CAF50; color: white; padding: 10px 20px; border: none; cursor: pointer; margin: 10px; }
+        .error { background: #ffebee; color: #c62828; padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .success { background: #e8f5e8; color: #2e7d32; padding: 10px; margin: 10px 0; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Braintree Container Debug Test</h1>
+    
+    <div id="status"></div>
+    
+    <button class="button" onclick="testContainer()">Test Container Cleanup</button>
+    <button class="button" onclick="simulateBraintreeCreate()">Simulate Braintree Create</button>
+    
+    <div id="test-container" class="container">
+        <p>This container should be empty when Braintree initializes</p>
+    </div>
+    
+    <div id="logs" style="background: #111; padding: 20px; border-radius: 8px; margin-top: 20px;">
+        <h3>Debug Logs:</h3>
+        <div id="log-content"></div>
+    </div>
+
+    <script>
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logContent = document.getElementById('log-content');
+            logContent.innerHTML += `<div style="margin: 5px 0; color: #90caf9;">[${timestamp}] ${message}</div>`;
+            logContent.scrollTop = logContent.scrollHeight;
+        }
+        
+        function testContainer() {
+            const container = document.getElementById('test-container');
+            log(`🔍 Container innerHTML before: "${container.innerHTML}"`);
+            log(`📏 Container children count before: ${container.children.length}`);
+            
+            // Test our container cleaning method
+            container.innerHTML = '';
+            container.textContent = '';
+            
+            while (container.firstChild) {
+                container.removeChild(container.firstChild);
+            }
+            
+            log(`✅ Container cleaned`);
+            log(`📏 Container children count after: ${container.children.length}`);
+            log(`🔍 Container innerHTML after: "${container.innerHTML}"`);
+            
+            if (container.children.length === 0 && container.innerHTML === '') {
+                document.getElementById('status').innerHTML = '<div class="success">✅ Container is properly empty!</div>';
+                log(`🎉 Container cleanup successful - ready for Braintree`);
+            } else {
+                document.getElementById('status').innerHTML = '<div class="error">❌ Container cleanup failed</div>';
+                log(`❌ Container cleanup failed`);
+            }
+        }
+        
+        function simulateBraintreeCreate() {
+            const container = document.getElementById('test-container');
+            
+            // First clean the container
+            container.innerHTML = '';
+            container.textContent = '';
+            while (container.firstChild) {
+                container.removeChild(container.firstChild);
+            }
+            
+            log(`🎨 Simulating Braintree Drop-in creation...`);
+            
+            // Simulate what Braintree does
+            setTimeout(() => {
+                const mockDropin = document.createElement('div');
+                mockDropin.innerHTML = `
+                    <div style="background: white; color: black; padding: 20px; border-radius: 8px;">
+                        <h3>🎉 Mock Braintree Drop-in UI</h3>
+                        <div style="border: 1px solid #ccc; padding: 10px; margin: 10px 0;">
+                            <input type="text" placeholder="Credit Card Number" style="width: 100%; padding: 8px;">
+                        </div>
+                        <div style="border: 1px solid #ccc; padding: 10px; margin: 10px 0;">
+                            <input type="text" placeholder="MM/YY" style="width: 48%; padding: 8px;">
+                            <input type="text" placeholder="CVV" style="width: 48%; padding: 8px; margin-left: 4%;">
+                        </div>
+                        <button style="background: #0070f3; color: white; padding: 10px 20px; border: none; border-radius: 4px; width: 100%;">
+                            Pay Now
+                        </button>
+                    </div>
+                `;
+                
+                container.appendChild(mockDropin);
+                log(`✅ Mock Drop-in UI created successfully`);
+                document.getElementById('status').innerHTML = '<div class="success">✅ Mock Drop-in created! This proves container is working.</div>';
+            }, 500);
+        }
+        
+        // Auto-run initial test
+        window.onload = function() {
+            log(`🚀 Container debug test started`);
+            log(`📍 Testing container cleanup methods`);
+        };
+    </script>
+</body>
+</html>

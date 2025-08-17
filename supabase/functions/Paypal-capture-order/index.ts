@@ -1,5 +1,6 @@
 import { serve } from 'https://deno.land/std@0.168.0/http/server.ts'
 import { corsHeaders } from '../_shared/cors.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.38.4'
 
 interface PayPalCaptureRequest {
   orderId: string
@@ -42,13 +43,73 @@ serve(async (req) => {
     const captureData = await captureResponse.json()
 
     if (captureData.status === 'COMPLETED') {
-      // Here you would typically update your database to mark the payment as complete
-      // and activate the user's account
+      // Initialize Supabase client
+      const supabase = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+      )
+
+      // Get current user balance
+      const { data: currentUserData, error: fetchError } = await supabase
+        .from('users')
+        .select('balance, total_earned')
+        .eq('id', userId)
+        .single()
+
+      if (fetchError) {
+        console.error('Error fetching current user data:', fetchError)
+      }
+
+      const currentBalance = currentUserData?.balance || 0
+      const currentTotalEarned = currentUserData?.total_earned || 0
+
+      // Update user account - activate and add ONLY $3 welcome bonus
+      const { error: userError } = await supabase
+        .from('users')
+        .update({
+          is_paid: true,
+          balance: currentBalance + 3.00, // Add $3 welcome bonus to existing balance
+          total_earned: currentTotalEarned + 3.00 // Add $3 to total earned
+        })
+        .eq('id', userId)
+
+      if (userError) {
+        console.error('Error updating user:', userError)
+      }
+
+      // Log the welcome bonus transaction
+      await supabase
+        .from('transactions')
+        .insert({
+          user_id: userId,
+          type: 'bonus',
+          amount: 3.00,
+          description: 'Welcome bonus for account activation',
+          reference: `WELCOME-${userId}-${Date.now()}`,
+          status: 'completed'
+        })
+
+      // Log the activation payment transaction (separate from balance)
+      await supabase
+        .from('transactions')
+        .insert({
+          user_id: userId,
+          type: 'activation_payment',
+          amount: 15.00,
+          description: 'Account activation fee payment',
+          reference: `PAYPAL-${orderId}`,
+          gateway_transaction_id: captureData.purchase_units[0].payments.captures[0].id,
+          status: 'completed',
+          gateway: 'paypal',
+          note: 'Activation fee - not added to user balance'
+        })
 
       return new Response(
         JSON.stringify({
           success: true,
-          transactionId: captureData.purchase_units[0].payments.captures[0].id
+          transactionId: captureData.purchase_units[0].payments.captures[0].id,
+          message: 'Payment successful and account activated',
+          welcomeBonus: 3.00
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       )

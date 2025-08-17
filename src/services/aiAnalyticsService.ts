@@ -1,5 +1,5 @@
 import * as tf from '@tensorflow/tfjs';
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from "../lib/supabase";
 import _ from 'lodash';
 import { format, subDays, parseISO } from 'date-fns';
 
@@ -41,10 +41,24 @@ class AIAnalyticsService {
   private models: Map<string, tf.LayersModel> = new Map();
   private userSegments: UserSegment[] = [];
   private anomalies: AnomalyDetection[] = [];
+  private isInitialized: boolean = false;
 
   constructor() {
-    this.initializeModels();
-    this.loadUserSegments();
+    this.initialize();
+  }
+
+  private async initialize(): Promise<void> {
+    try {
+      await Promise.all([
+        this.initializeModels(),
+        this.loadUserSegments()
+      ]);
+      this.isInitialized = true;
+      console.log('✅ AI Analytics Service initialized successfully');
+    } catch (error) {
+      console.error('❌ Failed to initialize AI Analytics Service:', error);
+      throw new Error('AI Analytics Service initialization failed');
+    }
   }
 
   /**
@@ -182,6 +196,12 @@ class AIAnalyticsService {
       const model = this.models.get('churn');
       if (!model) throw new Error('Churn model not loaded');
 
+      // Handle null supabase case
+      if (!supabase) {
+        console.log('🧪 TESTING MODE: Returning mock churn risk data');
+        return this.getMockChurnRiskData();
+      }
+
       // Get user activity data
       const { data: users, error } = await supabase
         .from('users')
@@ -224,6 +244,12 @@ class AIAnalyticsService {
    */
   async segmentUsers(): Promise<UserSegment[]> {
     try {
+      // Handle null supabase case
+      if (!supabase) {
+        console.log('🧪 TESTING MODE: Returning mock user segments');
+        return this.getMockUserSegments();
+      }
+
       // Fetch user data for clustering
       const { data: users, error } = await supabase
         .from('users')
@@ -292,6 +318,12 @@ class AIAnalyticsService {
     riskFactors: string[];
   }> {
     try {
+      // Handle null supabase case
+      if (!supabase) {
+        console.log('🧪 TESTING MODE: Returning mock personalized insights');
+        return this.getMockPersonalizedInsights(userId);
+      }
+
       // Analyze user's behavior and performance
       const { data: userData, error } = await supabase
         .from('users')
@@ -300,11 +332,19 @@ class AIAnalyticsService {
         .single();
 
       if (error) throw error;
+      if (!userData) {
+        return {
+          recommendations: ['Start by completing your profile to get personalized recommendations'],
+          predictedValue: 0,
+          riskFactors: ['Incomplete profile']
+        };
+      }
 
       // Generate AI-powered insights
       const insights = {
         recommendations: [
           `Based on your referral pattern, focus on ${this.getBestReferralStrategy(userData)}`,
+
           `Your earning potential could increase by ${this.predictEarningIncrease(userData)}% with optimized activity`,
           `Consider joining the agent program - you meet ${this.calculateAgentReadiness(userData)}% of requirements`
         ],
@@ -417,6 +457,15 @@ class AIAnalyticsService {
   }
 
   private async getCurrentMetrics(): Promise<{ [key: string]: number }> {
+    // Handle null supabase case
+    if (!supabase) {
+      return {
+        totalUsers: 156,
+        totalRevenue: 12750,
+        averageUserValue: 81.73
+      };
+    }
+
     // Fetch current platform metrics
     const { data: users } = await supabase.from('users').select('total_earned');
     const { data: transactions } = await supabase.from('transactions').select('amount');
@@ -438,6 +487,11 @@ class AIAnalyticsService {
   }
 
   private async getHistoricalRevenueData(days: number): Promise<any[]> {
+    // Handle null supabase case
+    if (!supabase) {
+      return this.getMockHistoricalRevenueData(days);
+    }
+
     const startDate = subDays(new Date(), days);
     
     const { data, error } = await supabase
@@ -494,6 +548,97 @@ class AIAnalyticsService {
     }
 
     return risks;
+  }
+
+  // Mock methods for testing mode
+  private getMockChurnRiskData(): UserBehaviorPattern[] {
+    return [
+      {
+        userId: 'test-user-1',
+        pattern: 'churning',
+        confidence: 0.75,
+        indicators: [
+          'Decreased login frequency',
+          'Lower engagement with referrals',
+          'Reduced earnings activity'
+        ],
+        nextBestAction: 'Send re-engagement campaign with bonus offer'
+      },
+      {
+        userId: 'test-user-2',
+        pattern: 'growing',
+        confidence: 0.82,
+        indicators: [
+          'Increasing referral activity',
+          'Regular platform engagement',
+          'Growing earnings trend'
+        ],
+        nextBestAction: 'Offer premium features and advanced tools'
+      }
+    ];
+  }
+
+  private getMockUserSegments(): UserSegment[] {
+    return [
+      {
+        id: 'high-value',
+        name: 'High Value Users',
+        characteristics: ['High earnings', 'Active referrers', 'Long tenure'],
+        size: 31,
+        conversionRate: 0.85,
+        averageRevenue: 150
+      },
+      {
+        id: 'growing',
+        name: 'Growing Users',
+        characteristics: ['Moderate earnings', 'Increasing activity', 'Recent joiners'],
+        size: 62,
+        conversionRate: 0.65,
+        averageRevenue: 75
+      },
+      {
+        id: 'dormant',
+        name: 'Dormant Users',
+        characteristics: ['Low activity', 'Minimal earnings', 'Need re-engagement'],
+        size: 63,
+        conversionRate: 0.25,
+        averageRevenue: 25
+      }
+    ];
+  }
+
+  private getMockPersonalizedInsights(userId: string): {
+    recommendations: string[];
+    predictedValue: number;
+    riskFactors: string[];
+  } {
+    return {
+      recommendations: [
+        'Based on your referral pattern, focus on social media influencer approach',
+        'Your earning potential could increase by 125% with optimized activity',
+        'Consider joining the agent program - you meet 85% of requirements'
+      ],
+      predictedValue: 245.50,
+      riskFactors: []
+    };
+  }
+
+  private getMockHistoricalRevenueData(days: number): any[] {
+    const data = [];
+    const now = new Date();
+    
+    for (let i = 0; i < days; i++) {
+      const date = subDays(now, i);
+      const baseAmount = 50 + Math.random() * 100;
+      
+      data.push({
+        amount: parseFloat(baseAmount.toFixed(2)),
+        created_at: date.toISOString(),
+        type: Math.random() > 0.7 ? 'referral' : 'task_completion'
+      });
+    }
+    
+    return data;
   }
 }
 

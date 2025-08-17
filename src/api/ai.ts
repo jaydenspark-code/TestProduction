@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from "../lib/supabase";
 import { aiAnalyticsService } from '../services/aiAnalyticsService';
 import { recommendationService } from '../services/recommendationService';
 import { smartMatchingService } from '../services/smartMatchingService';

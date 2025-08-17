@@ -2,8 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { User, Mail, Lock, Eye, EyeOff, UserPlus, Globe, ChevronDown, Phone } from 'lucide-react';
-import { detectUserCountry, getCountryCurrency, COUNTRIES, formatDualCurrency } from '../../utils/currency';
+import { User, Mail, Lock, Eye, EyeOff, UserPlus, ChevronDown, Phone } from 'lucide-react';
+import { formatDualCurrencySync } from '../../utils/currency';
+import 'react-phone-number-input/style.css';
+import { getAllCountries, detectUserCountry } from '../../utils/countries';
+import GoogleOAuthButton from './GoogleOAuthButton';
 
 const Register: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -49,7 +52,11 @@ const Register: React.FC = () => {
       }
     `;
     document.head.appendChild(style);
-    return () => document.head.removeChild(style);
+    return () => {
+      if (document.head.contains(style)) {
+        document.head.removeChild(style);
+      }
+    };
   }, []);
 
   const { register } = useAuth();
@@ -60,7 +67,8 @@ const Register: React.FC = () => {
     console.log('🔄 Success state changed to:', success);
   }, [success]);
 
-  const selectedCountry = COUNTRIES.find(c => c.code === formData.country);
+  const countries = getAllCountries();
+  const selectedCountry = countries.find(c => c.code === formData.country);
   const activationFeeUSD = 15.00;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -81,7 +89,13 @@ const Register: React.FC = () => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
+    console.log('🎯 handleSubmit called!'); // This should appear first
+    console.log('🔍 Event object:', e);
+    console.log('🔍 Event type:', e.type);
+    
     e.preventDefault();
+    
+    console.log('🚀 Default prevented, continuing with custom logic');
     
     // Validate form data
     if (formData.password !== formData.confirmPassword) {
@@ -133,7 +147,8 @@ const Register: React.FC = () => {
     try {
       setError('');
       console.log('📝 Preparing registration data...');
-      const currency = getCountryCurrency(formData.country);
+      const selectedCountry = countries.find(c => c.code === formData.country);
+      const currency = selectedCountry?.currency || 'USD';
       const registrationData = {
         ...formData,
         fullName: `${formData.firstName} ${formData.lastName}`,
@@ -259,6 +274,21 @@ const Register: React.FC = () => {
             ) : (
               // Show registration form when not successful
               <form onSubmit={handleSubmit} className="space-y-6">
+                {/* Google OAuth Button */}
+                <GoogleOAuthButton 
+                  mode="register"
+                />
+
+                {/* Divider */}
+                <div className="relative my-6">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-white/20"></div>
+                  </div>
+                  <div className="relative flex justify-center text-sm">
+                    <span className="px-2 bg-transparent text-white/60">or continue with email</span>
+                  </div>
+                </div>
+
                 {error && (
                   <div className="bg-red-500/10 border border-red-500/50 rounded-lg p-4 mb-6">
                     <div className="flex items-center">
@@ -375,7 +405,7 @@ const Register: React.FC = () => {
 
                       {showCountryDropdown && (
                         <div className={`absolute top-full left-0 right-0 mt-1 ${theme === 'professional' ? 'bg-gray-800' : 'bg-gray-800'} border ${theme === 'professional' ? 'border-gray-600' : 'border-white/20'} rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto`}>
-                          {COUNTRIES.map(country => (
+                          {countries.map(country => (
                             <button
                               key={country.code}
                               type="button"
@@ -472,7 +502,7 @@ const Register: React.FC = () => {
                   <div className="text-center">
                     <h4 className="text-green-300 font-medium mb-2">🎉 Welcome Bonus</h4>
                     <p className="text-white/80 text-sm">
-                      Deposit {formatDualCurrency(activationFeeUSD, selectedCountry?.currency || 'USD')} and get $3.00 instant bonus!
+                      Deposit {formatDualCurrencySync(activationFeeUSD, selectedCountry?.currency || 'USD')} and get $3.00 instant bonus!
                     </p>
                   </div>
                 </div>
@@ -481,6 +511,12 @@ const Register: React.FC = () => {
                 <button
                   type="submit"
                   disabled={loading}
+                  onClick={(e) => {
+                    console.log('🔴 BUTTON CLICKED! Event:', e.type);
+                    console.log('🔴 Button type:', e.currentTarget.type);
+                    console.log('🔴 Form element:', e.currentTarget.form);
+                    // Don't prevent default here - let the form handle it
+                  }}
                   className="w-full bg-gradient-to-r from-pink-600 to-red-600 hover:from-pink-700 hover:to-red-700 text-white py-4 rounded-lg font-bold text-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2 focus:ring-offset-transparent transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 >
                   {loading ? (
@@ -496,7 +532,7 @@ const Register: React.FC = () => {
                   ) : (
                     <>
                       <UserPlus className="w-5 h-5 mr-2" />
-                      <span>Register & Deposit {formatDualCurrency(activationFeeUSD, selectedCountry?.currency || 'USD')}</span>
+                      <span>Register & Deposit {formatDualCurrencySync(activationFeeUSD, selectedCountry?.currency || 'USD')}</span>
                     </>
                   )}
                 </button>

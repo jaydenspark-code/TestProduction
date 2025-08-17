@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Braintree Official Tutorial Method</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .log {
+            background: #1e1e1e;
+            color: #f0f0f0;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .test-button {
+            background: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        .test-button:hover {
+            background: #45a049;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    </style>
+    
+    <!-- Following EXACT tutorial method -->
+    <!-- Includes the Braintree JS Drop-in SDK (Official Tutorial Version) -->
+    <script src="https://js.braintreegateway.com/web/dropin/1.44.0/js/dropin.min.js"></script>
+    <!-- Includes jQuery (as shown in tutorial) -->
+    <script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>📚 Braintree Official Tutorial Method</h1>
+        <p>This version follows the <strong>exact method</strong> shown in the Braintree official tutorial.</p>
+        
+        <button class="test-button" onclick="runOfficialTest()">📚 Test Official Method</button>
+        <button class="test-button" onclick="testWithTokenizationKey()">🔑 Test with Tokenization Key</button>
+        <button class="test-button" onclick="clearLog()">🧹 Clear Log</button>
+        
+        <div id="status" class="status info">
+            Ready for official tutorial test...
+        </div>
+        
+        <div id="log" class="log">Console output will appear here...</div>
+        
+        <!-- Following tutorial markup exactly -->
+        <div id="dropin-wrapper">
+            <div id="checkout-message"></div>
+            <div id="dropin-container"></div>
+            <button id="submit-button">Submit Payment</button>
+        </div>
+    </div>
+
+    <script>
+        // Enhanced logging
+        const originalLog = console.log;
+        const originalError = console.error;
+        const logDiv = document.getElementById('log');
+        const statusDiv = document.getElementById('status');
+        
+        function addToLog(message, type = 'log') {
+            const timestamp = new Date().toISOString().substring(11, 23);
+            let color = '#f0f0f0';
+            let prefix = 'INFO';
+            
+            switch(type) {
+                case 'error': color = '#ff6b6b'; prefix = 'ERROR'; break;
+                case 'success': color = '#4CAF50'; prefix = 'SUCCESS'; break;
+                case 'warning': color = '#ffeb3b'; prefix = 'WARNING'; break;
+                case 'debug': color = '#81C784'; prefix = 'DEBUG'; break;
+            }
+            
+            logDiv.innerHTML += `<div style="color: ${color}">[${timestamp}] ${prefix}: ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            
+            if (type === 'error') {
+                statusDiv.className = 'status error';
+                statusDiv.textContent = '❌ Error occurred - check log';
+            } else if (type === 'success') {
+                statusDiv.className = 'status success';
+                statusDiv.textContent = '✅ Test completed successfully';
+            } else {
+                statusDiv.className = 'status info';
+                statusDiv.textContent = '🔄 Test in progress...';
+            }
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToLog(args.join(' '));
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToLog(args.join(' '), 'error');
+        };
+        
+        function clearLog() {
+            logDiv.innerHTML = '';
+            statusDiv.className = 'status info';
+            statusDiv.textContent = 'Log cleared - ready for new test';
+        }
+
+        // Real credentials
+        const BRAINTREE_CONFIG = {
+            merchantId: '2yhrvbtjszdbvxtt',
+            publicKey: 'sgfjmfv929kzffsr',
+            privateKey: '4edc8a7489369f8e7d5cb8c9a8066c17',
+            environment: 'sandbox'
+        };
+
+        async function runOfficialTest() {
+            clearLog();
+            console.log('📚 Starting Official Tutorial Method Test...');
+            
+            try {
+                // Check if scripts loaded
+                console.log('🔍 Checking script availability...');
+                console.log('- braintree available:', typeof window.braintree);
+                console.log('- jQuery available:', typeof window.$);
+                
+                if (typeof window.braintree === 'undefined') {
+                    throw new Error('Braintree script not loaded - check script URL');
+                }
+                
+                console.log('- braintree.dropin available:', !!window.braintree.dropin);
+                
+                if (!window.braintree.dropin) {
+                    throw new Error('Braintree dropin not available - script may be wrong version');
+                }
+                
+                // Get client token first
+                console.log('🎯 Getting client token...');
+                const clientToken = await getBraintreeClientToken();
+                
+                // Create dropin following tutorial exactly
+                console.log('🎨 Creating dropin following official tutorial...');
+                await createDropinOfficialMethod(clientToken);
+                
+                addToLog('✅ OFFICIAL METHOD SUCCESS!', 'success');
+                
+            } catch (error) {
+                console.error('Official method failed:', error);
+                addToLog(`❌ Official method failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function testWithTokenizationKey() {
+            clearLog();
+            console.log('🔑 Testing with Tokenization Key (simpler method)...');
+            
+            try {
+                // Check scripts
+                if (typeof window.braintree === 'undefined' || !window.braintree.dropin) {
+                    throw new Error('Braintree scripts not loaded properly');
+                }
+                
+                // For testing, we'll use the client token as authorization
+                // In real implementation, you'd get a tokenization key from Braintree dashboard
+                console.log('🎯 Getting authorization token...');
+                const clientToken = await getBraintreeClientToken();
+                
+                console.log('🎨 Creating dropin with tokenization approach...');
+                
+                // Clear container
+                const container = document.getElementById('dropin-container');
+                container.innerHTML = '';
+                
+                // Following the tutorial's JavaScript code exactly
+                const button = document.querySelector('#submit-button');
+                const dropinInstance = await braintree.dropin.create({
+                    authorization: clientToken,
+                    container: '#dropin-container'
+                });
+                
+                console.log('✅ Dropin created successfully!');
+                console.log('Setting up button click handler...');
+                
+                // Following tutorial's button handler
+                button.addEventListener('click', function () {
+                    dropinInstance.requestPaymentMethod(function (requestPaymentMethodErr, payload) {
+                        if (requestPaymentMethodErr) {
+                            console.error('Payment method request failed:', requestPaymentMethodErr);
+                            return;
+                        }
+                        
+                        console.log('✅ Payment method obtained:', payload);
+                        
+                        // Show success message (following tutorial)
+                        document.getElementById('checkout-message').innerHTML = 
+                            '<h1>Success!</h1><p>Your Drop-in UI is working! Payment method: ' + payload.type + '</p>';
+                        
+                        // Remove submit button (following tutorial)
+                        button.remove();
+                    });
+                });
+                
+                addToLog('✅ TOKENIZATION METHOD SUCCESS!', 'success');
+                
+            } catch (error) {
+                console.error('Tokenization method failed:', error);
+                addToLog(`❌ Tokenization method failed: ${error.message}`, 'error');
+            }
+        }
+
+        async function getBraintreeClientToken() {
+            console.log('🌐 Requesting client token from Braintree API...');
+            
+            const credentials = btoa(`${BRAINTREE_CONFIG.publicKey}:${BRAINTREE_CONFIG.privateKey}`);
+            const requestBody = `<?xml version="1.0" encoding="UTF-8"?><client-token></client-token>`;
+            const apiUrl = `https://api.sandbox.braintreegateway.com/merchants/${BRAINTREE_CONFIG.merchantId}/client_token`;
+            
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Basic ${credentials}`,
+                    'Content-Type': 'application/xml',
+                    'Accept': 'application/xml',
+                    'Braintree-Version': '2019-01-01'
+                },
+                body: requestBody
+            });
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`API error: ${response.status} - ${errorText}`);
+            }
+            
+            const responseText = await response.text();
+            
+            // Parse XML to extract token
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(responseText, 'text/xml');
+            const clientTokenElement = xmlDoc.querySelector('client-token');
+            
+            if (!clientTokenElement) {
+                throw new Error('No client-token found in API response');
+            }
+            
+            const clientToken = clientTokenElement.textContent.trim();
+            console.log(`✅ Client token obtained (${clientToken.length} characters)`);
+            
+            return clientToken;
+        }
+
+        async function createDropinOfficialMethod(clientToken) {
+            console.log('🎨 Creating dropin using official tutorial method...');
+            
+            // Clear any existing content
+            document.getElementById('checkout-message').innerHTML = '';
+            document.getElementById('dropin-container').innerHTML = '';
+            
+            try {
+                // Following the exact tutorial code pattern
+                const button = document.querySelector('#submit-button');
+                
+                console.log('Creating braintree.dropin...');
+                const dropinInstance = await braintree.dropin.create({
+                    authorization: clientToken,
+                    container: '#dropin-container'
+                });
+                
+                console.log('✅ Dropin instance created:', typeof dropinInstance);
+                console.log('✅ Dropin methods available:', Object.getOwnPropertyNames(Object.getPrototypeOf(dropinInstance)));
+                
+                // Set up the button handler exactly like tutorial
+                button.addEventListener('click', function() {
+                    console.log('🔘 Submit button clicked, requesting payment method...');
+                    
+                    dropinInstance.requestPaymentMethod(function(requestPaymentMethodErr, payload) {
+                        if (requestPaymentMethodErr) {
+                            console.error('❌ Payment method request error:', requestPaymentMethodErr);
+                            document.getElementById('checkout-message').innerHTML = 
+                                '<h1>Error!</h1><p>' + requestPaymentMethodErr.message + '</p>';
+                            return;
+                        }
+                        
+                        console.log('✅ Payment method received:', payload);
+                        
+                        // Success message exactly like tutorial
+                        document.getElementById('checkout-message').innerHTML = 
+                            '<h1>Success!</h1><p>Your Drop-in UI is working! Check your console for payment method details.</p>';
+                        
+                        // Remove button like tutorial
+                        button.remove();
+                    });
+                });
+                
+                console.log('✅ Official tutorial method setup complete!');
+                console.log('💡 Click "Submit Payment" button to test payment method request');
+                
+                return dropinInstance;
+                
+            } catch (error) {
+                console.error('❌ Official method dropin creation failed:', error);
+                throw error;
+            }
+        }
+
+        // Initial checks when page loads
+        window.addEventListener('load', function() {
+            console.log('📚 Official Tutorial Method Page Loaded');
+            console.log('🔍 Initial Script Check:');
+            console.log('- Braintree loaded:', typeof window.braintree !== 'undefined');
+            console.log('- jQuery loaded:', typeof window.$ !== 'undefined');
+            
+            if (typeof window.braintree !== 'undefined') {
+                console.log('- Braintree version/info:', window.braintree.VERSION || 'Version info not available');
+                console.log('- Braintree.dropin available:', !!window.braintree.dropin);
+            }
+            
+            console.log('Click "Test Official Method" to start using the exact tutorial approach');
+        });
+    </script>
+</body>
+</html>

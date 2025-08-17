@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Braintree Direct API Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .log {
+            background: #1e1e1e;
+            color: #f0f0f0;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .test-button {
+            background: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        .test-button:hover {
+            background: #45a049;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Braintree Direct API Test</h1>
+        <p>This page tests our Braintree credentials directly by calling the Braintree API and then testing Drop-in creation.</p>
+        
+        <button class="test-button" onclick="runDirectTest()">🚀 Test Braintree API</button>
+        <button class="test-button" onclick="clearLog()">🧹 Clear Log</button>
+        
+        <div id="status" class="status info">
+            Ready to test Braintree API...
+        </div>
+        
+        <div id="log" class="log">
+            Console output will appear here...
+        </div>
+        
+        <div id="braintree-container" style="margin-top: 20px;">
+            <!-- Braintree Drop-in will be created here -->
+        </div>
+    </div>
+
+    <script>
+        // Redirect console.log to our log div
+        const originalLog = console.log;
+        const originalError = console.error;
+        const logDiv = document.getElementById('log');
+        const statusDiv = document.getElementById('status');
+        
+        function addToLog(message, type = 'log') {
+            const timestamp = new Date().toISOString().substring(11, 19);
+            const color = type === 'error' ? '#ff6b6b' : type === 'success' ? '#4CAF50' : '#f0f0f0';
+            logDiv.innerHTML += `<div style="color: ${color}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            
+            // Update status
+            if (type === 'error') {
+                statusDiv.className = 'status error';
+                statusDiv.textContent = '❌ Error occurred - check log';
+            } else if (type === 'success') {
+                statusDiv.className = 'status success';
+                statusDiv.textContent = '✅ Test completed successfully';
+            } else {
+                statusDiv.className = 'status info';
+                statusDiv.textContent = '🔄 Test in progress...';
+            }
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToLog(args.join(' '));
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToLog(args.join(' '), 'error');
+        };
+        
+        function clearLog() {
+            logDiv.innerHTML = '';
+            statusDiv.className = 'status info';
+            statusDiv.textContent = 'Log cleared - ready for new test';
+        }
+        
+        async function runDirectTest() {
+            clearLog();
+            console.log('🚀 Starting Braintree Direct API Test...');
+            
+            try {
+                await testBraintreeCredentials();
+                addToLog('✅ Test completed successfully!', 'success');
+            } catch (error) {
+                console.error('Test failed:', error);
+                addToLog(`❌ Test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Real credentials from your Braintree dashboard
+        const BRAINTREE_CONFIG = {
+            merchantId: '2yhrvbtjszdbvxtt',
+            publicKey: 'sgfjmfv929kzffsr',
+            privateKey: '4edc8a7489369f8e7d5cb8c9a8066c17',
+            environment: 'sandbox'
+        };
+
+        async function testBraintreeCredentials() {
+            console.log('🔧 TESTING BRAINTREE CREDENTIALS DIRECTLY...');
+            
+            console.log('📊 Using credentials:');
+            console.log('Merchant ID:', BRAINTREE_CONFIG.merchantId);
+            console.log('Public Key:', BRAINTREE_CONFIG.publicKey);
+            console.log('Private Key:', BRAINTREE_CONFIG.privateKey ? '[PRESENT]' : '[MISSING]');
+            
+            try {
+                // Create basic auth header
+                const credentials = btoa(`${BRAINTREE_CONFIG.publicKey}:${BRAINTREE_CONFIG.privateKey}`);
+                
+                // Create request body for client token
+                const requestBody = {
+                    client_token: {
+                        // No customer_id for one-time payments
+                    }
+                };
+                
+                console.log('🌐 Making request to Braintree API...');
+                const apiUrl = `https://api.sandbox.braintreegateway.com/merchants/${BRAINTREE_CONFIG.merchantId}/client_token`;
+                console.log('URL:', apiUrl);
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Basic ${credentials}`,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Braintree-Version': '2019-01-01'
+                    },
+                    body: JSON.stringify(requestBody)
+                });
+                
+                console.log('📡 Response Status:', response.status);
+                console.log('📡 Response OK:', response.ok);
+                
+                const responseText = await response.text();
+                console.log('📡 Response Body Length:', responseText.length);
+                console.log('📡 Response Body Preview:', responseText.substring(0, 200) + '...');
+                
+                if (!response.ok) {
+                    console.error('❌ API Error:', response.status, responseText);
+                    throw new Error(`Braintree API error: ${response.status} - ${responseText}`);
+                }
+                
+                // Try to parse as JSON
+                let tokenData;
+                try {
+                    tokenData = JSON.parse(responseText);
+                    console.log('✅ Parsed JSON Response keys:', Object.keys(tokenData));
+                    
+                    // Extract client token
+                    const clientToken = tokenData.client_token || tokenData.clientToken;
+                    if (clientToken) {
+                        console.log('🎯 SUCCESS! Client Token Generated:');
+                        console.log('Token Length:', clientToken.length);
+                        console.log('Token Preview:', clientToken.substring(0, 50) + '...');
+                        
+                        // Test with Braintree Drop-in
+                        console.log('🧪 Testing with Braintree Drop-in...');
+                        await testDropinWithToken(clientToken);
+                    } else {
+                        console.error('❌ No client token found in response');
+                        throw new Error('No client token found in response');
+                    }
+                } catch (parseError) {
+                    console.log('📄 Response is not JSON, might be token directly');
+                    if (responseText.length > 10) {
+                        console.log('🧪 Testing response as direct token...');
+                        await testDropinWithToken(responseText);
+                    } else {
+                        throw new Error('Invalid response format');
+                    }
+                }
+                
+            } catch (error) {
+                console.error('❌ Network/Request Error:', error);
+                throw error;
+            }
+        }
+
+        async function testDropinWithToken(clientToken) {
+            console.log('🎨 Testing Braintree Drop-in creation...');
+            
+            try {
+                // Load Braintree SDK if not already loaded
+                if (!window.braintree) {
+                    console.log('📦 Loading Braintree SDK...');
+                    
+                    // Load client SDK
+                    const clientScript = document.createElement('script');
+                    clientScript.src = 'https://js.braintreegateway.com/web/3.97.2/js/client.min.js';
+                    document.head.appendChild(clientScript);
+                    
+                    await new Promise((resolve, reject) => {
+                        clientScript.onload = resolve;
+                        clientScript.onerror = reject;
+                    });
+                    
+                    // Load dropin SDK
+                    const dropinScript = document.createElement('script');
+                    dropinScript.src = 'https://js.braintreegateway.com/web/3.97.2/js/dropin.min.js';
+                    document.head.appendChild(dropinScript);
+                    
+                    await new Promise((resolve, reject) => {
+                        dropinScript.onload = resolve;
+                        dropinScript.onerror = reject;
+                    });
+                    
+                    console.log('✅ Braintree SDK loaded successfully');
+                }
+                
+                console.log('🔧 Creating Braintree Drop-in...');
+                console.log('Using token length:', clientToken.length);
+                
+                // Clear previous container
+                const container = document.getElementById('braintree-container');
+                container.innerHTML = '<h3>🎨 Braintree Drop-in Test Result</h3>';
+                
+                const dropinDiv = document.createElement('div');
+                dropinDiv.id = 'dropin-container-test';
+                dropinDiv.style.padding = '20px';
+                dropinDiv.style.border = '2px solid #4CAF50';
+                dropinDiv.style.borderRadius = '8px';
+                dropinDiv.style.backgroundColor = '#f9f9f9';
+                container.appendChild(dropinDiv);
+                
+                const dropinInstance = await braintree.dropin.create({
+                    authorization: clientToken,
+                    container: '#dropin-container-test',
+                    paypal: {
+                        flow: 'checkout',
+                        amount: '10.00',
+                        currency: 'USD'
+                    }
+                });
+                
+                console.log('✅ SUCCESS! Drop-in created successfully!');
+                console.log('Drop-in instance methods:', Object.getOwnPropertyNames(dropinInstance));
+                
+                // Add success message
+                const successMsg = document.createElement('div');
+                successMsg.innerHTML = `
+                    <div style="background: #4CAF50; color: white; padding: 15px; margin: 10px 0; border-radius: 4px;">
+                        ✅ <strong>SUCCESS!</strong> Braintree Drop-in created successfully!<br>
+                        <small>Your credentials work perfectly. The payment form should appear above.</small>
+                    </div>
+                `;
+                container.appendChild(successMsg);
+                
+                return dropinInstance;
+                
+            } catch (error) {
+                console.error('❌ Drop-in Creation Failed:', error);
+                
+                // Add error message
+                const container = document.getElementById('braintree-container');
+                const errorMsg = document.createElement('div');
+                errorMsg.innerHTML = `
+                    <div style="background: #f44336; color: white; padding: 15px; margin: 10px 0; border-radius: 4px;">
+                        ❌ <strong>DROP-IN CREATION FAILED:</strong><br>
+                        ${error.message}<br>
+                        <small>Check the console log above for detailed error information.</small>
+                    </div>
+                `;
+                container.appendChild(errorMsg);
+                
+                throw error;
+            }
+        }
+
+        // Initial message
+        console.log('🚀 Braintree Direct Test Page Loaded');
+        console.log('Click "Test Braintree API" button to start the test');
+    </script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>✅ Test Verify Email Function - FIXED</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; font-size: 12px; }
+        .url-box { background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 10px 0; word-break: break-all; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Testing Verify Email Function - API Key Fix</h1>
+        
+        <div class="info">
+            <h3>✅ Your Database Policies Are Perfect!</h3>
+            <p>I saw your RLS policies - they're correctly configured for public access. The issue is with Edge Function authentication, not database permissions.</p>
+        </div>
+
+        <div class="success">
+            <h3>🎯 Updated Function With API Key Support</h3>
+            <p>I've updated your verify-email function to accept the API key in multiple ways:</p>
+            <ul>
+                <li>Via URL parameter: <code>?key=ANON_KEY</code></li>
+                <li>Via header: <code>apikey: ANON_KEY</code></li>
+                <li>Via authorization header</li>
+            </ul>
+        </div>
+
+        <h3>🧪 Test the Fixed Function:</h3>
+        <button onclick="testWithKeyInURL()">Test with API Key in URL</button>
+        <button onclick="testWithHeaders()">Test with Headers</button>
+        <button onclick="testDirectLink()">Open Direct Link</button>
+
+        <div id="results"></div>
+
+        <div class="info">
+            <h3>📋 Your SendGrid Email Template Update:</h3>
+            <p>Change your verification link to include the API key:</p>
+            <div class="url-box">
+                <strong>NEW URL:</strong><br>
+                https://bmtaqilpuszwoshtizmq.supabase.co/functions/v1/verify-email?token={{token}}&key=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJtdGFxaWxwdXN6d29zaHRpem1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjMyNDk2NDUsImV4cCI6MjAzODgyNTY0NX0.2qgGz3eMTaBz4qC_7vwWfp5RKQbKXxmF1BxCnMHIFj8
+            </div>
+        </div>
+
+        <div class="success">
+            <h3>🚀 Once This Works, Your Complete Flow Will Be:</h3>
+            <ol>
+                <li><strong>User Registration</strong> → SendGrid verification email sent</li>
+                <li><strong>Email Click</strong> → Verify-email function (with API key)</li>
+                <li><strong>Success Page</strong> → Beautiful HTML with auto-redirect</li>
+                <li><strong>Payment Page</strong> → Multi-gateway selection</li>
+                <li><strong>Account Activation</strong> → $3 welcome bonus + full access</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJtdGFxaWxwdXN6d29zaHRpem1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjMyNDk2NDUsImV4cCI6MjAzODgyNTY0NX0.2qgGz3eMTaBz4qC_7vwWfp5RKQbKXxmF1BxCnMHIFj8';
+
+        function addResult(title, status, content) {
+            const resultsDiv = document.getElementById('results');
+            const className = status === 'success' ? 'success' : status === 'error' ? 'error' : 'info';
+            
+            resultsDiv.innerHTML += `
+                <div class="${className}">
+                    <h4>${title}</h4>
+                    <pre>${content}</pre>
+                </div>
+            `;
+        }
+
+        async function testWithKeyInURL() {
+            try {
+                const url = `https://bmtaqilpuszwoshtizmq.supabase.co/functions/v1/verify-email?token=test&key=${ANON_KEY}`;
+                const response = await fetch(url);
+                const text = await response.text();
+                
+                if (response.status === 200) {
+                    addResult('✅ Success with API Key in URL!', 'success', `Status: ${response.status}\nResponse: ${text.substring(0, 200)}...`);
+                } else {
+                    addResult('🔍 Response with API Key in URL', 'info', `Status: ${response.status}\nResponse: ${text.substring(0, 200)}...`);
+                }
+            } catch (error) {
+                addResult('❌ Error with API Key in URL', 'error', error.message);
+            }
+        }
+
+        async function testWithHeaders() {
+            try {
+                const response = await fetch('https://bmtaqilpuszwoshtizmq.supabase.co/functions/v1/verify-email?token=test', {
+                    headers: {
+                        'Authorization': `Bearer ${ANON_KEY}`,
+                        'apikey': ANON_KEY,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const text = await response.text();
+                
+                if (response.status === 200) {
+                    addResult('✅ Success with Headers!', 'success', `Status: ${response.status}\nResponse: ${text.substring(0, 200)}...`);
+                } else {
+                    addResult('🔍 Response with Headers', 'info', `Status: ${response.status}\nResponse: ${text.substring(0, 200)}...`);
+                }
+            } catch (error) {
+                addResult('❌ Error with Headers', 'error', error.message);
+            }
+        }
+
+        function testDirectLink() {
+            const url = `https://bmtaqilpuszwoshtizmq.supabase.co/functions/v1/verify-email?token=test&key=${ANON_KEY}`;
+            window.open(url, '_blank');
+        }
+
+        // Auto-run the URL test
+        window.onload = () => {
+            setTimeout(testWithKeyInURL, 1000);
+        };
+    </script>
+</body>
+</html>

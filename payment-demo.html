@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EarnPro Payment Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://js.paystack.co/v1/inline.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/lucide@latest/dist/umd/lucide.js">
+</head>
+<body class="min-h-screen bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+    <div class="flex items-center justify-center p-4 min-h-screen">
+        <div class="w-full max-w-md">
+            <div class="bg-white/10 backdrop-blur-lg rounded-2xl p-8 shadow-2xl border border-white/20">
+                <!-- Header -->
+                <div class="text-center mb-8">
+                    <div class="w-16 h-16 bg-gradient-to-br from-purple-500 to-blue-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                        </svg>
+                    </div>
+                    <h1 class="text-3xl font-bold text-white mb-2">Activate Your Account</h1>
+                    <p class="text-white/70">Complete your payment to start earning</p>
+                </div>
+
+                <!-- Payment Method Selection -->
+                <div class="space-y-6">
+                    <div class="bg-white/5 rounded-lg p-6 border border-white/10">
+                        <h3 class="text-white font-medium mb-4">Select Payment Method</h3>
+                        <div class="grid grid-cols-3 gap-4">
+                            <!-- Braintree -->
+                            <button onclick="selectGateway('braintree')" id="braintree-btn" class="payment-gateway-btn bg-purple-500/20 border-purple-500/50 p-4 rounded-lg border transition-all duration-200 flex flex-col items-center justify-center space-y-2">
+                                <div class="text-2xl">🔷</div>
+                                <span class="text-white text-sm font-medium">Braintree</span>
+                                <span class="text-white/60 text-xs text-center">Cards, PayPal, Apple/Google Pay</span>
+                            </button>
+                            
+                            <!-- PayStack -->
+                            <button onclick="selectGateway('paystack')" id="paystack-btn" class="payment-gateway-btn bg-white/5 border-white/10 hover:bg-white/10 p-4 rounded-lg border transition-all duration-200 flex flex-col items-center justify-center space-y-2">
+                                <div class="text-2xl">🇳🇬</div>
+                                <span class="text-white text-sm font-medium">Paystack</span>
+                                <span class="text-white/60 text-xs text-center">Best for Nigerian Users</span>
+                            </button>
+                            
+                            <!-- PayPal -->
+                            <button onclick="selectGateway('paypal')" id="paypal-btn" class="payment-gateway-btn bg-white/5 border-white/10 hover:bg-white/10 p-4 rounded-lg border transition-all duration-200 flex flex-col items-center justify-center space-y-2">
+                                <div class="text-2xl">🅿️</div>
+                                <span class="text-white text-sm font-medium">PayPal</span>
+                                <span class="text-white/60 text-xs text-center">PayPal Account Required</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Pricing Information -->
+                    <div class="bg-white/5 rounded-lg p-6 border border-white/10">
+                        <h3 class="text-white font-medium mb-4 flex items-center">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
+                            </svg>
+                            Activation Fee
+                        </h3>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-white/70">Activation Amount:</span>
+                                <span class="text-white">$15.00 USD</span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-white/70">Welcome Bonus:</span>
+                                <span class="text-green-300">+$3.00 USD</span>
+                            </div>
+                            <div class="border-t border-white/20 pt-2">
+                                <div class="flex justify-between items-center text-lg font-medium">
+                                    <span class="text-white">You Pay:</span>
+                                    <span class="text-purple-300">$15.00 USD</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Benefits -->
+                    <div class="bg-white/5 rounded-lg p-4 border border-white/10">
+                        <h4 class="text-white font-medium mb-2">What You Get:</h4>
+                        <ul class="text-white/70 text-sm space-y-1">
+                            <li class="flex items-center">
+                                <svg class="w-4 h-4 mr-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                Full access to referral system
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="w-4 h-4 mr-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                $3.00 instant welcome bonus
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="w-4 h-4 mr-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                Earn from direct referrals
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="w-4 h-4 mr-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                Multi-level indirect earnings
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="w-4 h-4 mr-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                Access to daily tasks
+                            </li>
+                            <li class="flex items-center">
+                                <svg class="w-4 h-4 mr-2 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                                </svg>
+                                24/7 support and guidance
+                            </li>
+                        </ul>
+                    </div>
+
+                    <!-- Payment Form (Shown when Braintree is selected) -->
+                    <div id="payment-form" class="hidden bg-white/5 rounded-lg p-6 border border-white/10">
+                        <h3 class="text-white font-medium mb-4">Enter Card Details</h3>
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-white/70 text-sm mb-2">Card Number</label>
+                                <input type="text" placeholder="1234 5678 9012 3456" class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-white/70 text-sm mb-2">Expiry Date</label>
+                                    <input type="text" placeholder="MM/YY" class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                </div>
+                                <div>
+                                    <label class="block text-white/70 text-sm mb-2">CVV</label>
+                                    <input type="text" placeholder="123" class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-white/70 text-sm mb-2">Cardholder Name</label>
+                                <input type="text" placeholder="John Doe" class="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-purple-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pay Button -->
+                    <button onclick="processPayment()" class="w-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white py-3 rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-transparent transition-all duration-200 flex items-center justify-center space-x-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                        </svg>
+                        <span>Pay $15.00 USD</span>
+                    </button>
+
+                    <!-- Security Note -->
+                    <div class="text-center">
+                        <p class="text-white/70 text-xs">
+                            Secure payment processing. Your card details are encrypted and never stored.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedGateway = 'braintree';
+        
+        function selectGateway(gateway) {
+            selectedGateway = gateway;
+            
+            // Reset all buttons
+            document.querySelectorAll('.payment-gateway-btn').forEach(btn => {
+                btn.className = 'payment-gateway-btn bg-white/5 border-white/10 hover:bg-white/10 p-4 rounded-lg border transition-all duration-200 flex flex-col items-center justify-center space-y-2';
+            });
+            
+            // Highlight selected button
+            const selectedBtn = document.getElementById(gateway + '-btn');
+            selectedBtn.className = 'payment-gateway-btn bg-purple-500/20 border-purple-500/50 p-4 rounded-lg border transition-all duration-200 flex flex-col items-center justify-center space-y-2';
+            
+            // Show/hide payment form based on selection
+            const paymentForm = document.getElementById('payment-form');
+            if (gateway === 'braintree') {
+                paymentForm.classList.remove('hidden');
+            } else {
+                paymentForm.classList.add('hidden');
+            }
+        }
+        
+        function processPayment() {
+            if (selectedGateway === 'paystack') {
+                // Demo PayStack integration
+                alert('PayStack payment would be processed here. This is a demo interface.');
+            } else if (selectedGateway === 'paypal') {
+                alert('PayPal payment would redirect to PayPal. This is a demo interface.');
+            } else {
+                alert('Braintree payment would be processed here. This is a demo interface.');
+            }
+        }
+        
+        // Initialize with Braintree selected
+        selectGateway('braintree');
+    </script>
+</body>
+</html>

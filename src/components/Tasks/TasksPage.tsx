@@ -3,7 +3,7 @@ import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { Play, CheckCircle, Lock, Clock, DollarSign, Calendar, MessageCircle, ExternalLink } from 'lucide-react';
 import { Task, TaskProgress } from '../../types';
-import { formatDualCurrency } from '../../utils/currency';
+import { formatDualCurrencySync } from '../../utils/currency';
 import VideoPlayer from './VideoPlayer';
 import TelegramTask from './TelegramTask';
 
@@ -135,7 +135,7 @@ const TasksPage: React.FC = () => {
           <div className={`${cardClass} p-6`}>
             <div className="flex items-center justify-between mb-4">
               <DollarSign className={`w-8 h-8 ${theme === 'professional' ? 'text-cyan-300' : 'text-green-300'}`} />
-              <span className="text-2xl font-bold text-white">{formatDualCurrency(totalEarnings, user?.currency || 'USD')}</span>
+              <span className="text-2xl font-bold text-white">{formatDualCurrencySync(totalEarnings, user?.currency || 'USD')}</span>
             </div>
             <h3 className="text-white font-medium">Task Earnings</h3>
             <p className="text-white/70 text-sm">Total from completed tasks</p>
@@ -266,7 +266,7 @@ const TasksPage: React.FC = () => {
                     
                     <div className="text-right">
                       <div className={`${theme === 'professional' ? 'text-cyan-300' : 'text-green-300'} font-bold`}>
-                        +{formatDualCurrency(task.reward, user?.currency || 'USD')}
+                        +{formatDualCurrencySync(task.reward, user?.currency || 'USD')}
                       </div>
                       {!task.isCompleted && !task.isLocked && (
                         <button

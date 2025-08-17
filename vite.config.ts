@@ -1,89 +1,254 @@
-import { defineConfig, loadEnv } from 'vite';
-import react from '@vitejs/plugin-react';
-import { VitePWA } from 'vite-plugin-pwa';
+import { defineConfig } from 'vite'
+import react from '@vitejs/plugin-react'
+import path from 'path'
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '');
-  
-  return {
-    plugins: [
-      react(),
-      VitePWA({
-        registerType: 'autoUpdate',
-        includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
-        workbox: {
-          globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,webmanifest}'],
-          maximumFileSizeToCacheInBytes: 4 * 1024 * 1024 // 4 MB limit
-        },
-        manifest: {
-          name: 'EarnPro - Referral Rewards Platform',
-          short_name: 'EarnPro',
-          description: 'The world\'s most trusted referral rewards platform',
-          theme_color: '#8B5CF6',
-          background_color: '#1F2937',
-          display: 'standalone',
-          scope: '/',
-          start_url: '/',
-          icons: [
-            {
-              src: '/icon-192x192.png',
-              sizes: '192x192',
-              type: 'image/png',
-              purpose: 'any maskable'
-            },
-            {
-              src: '/icon-512x512.png',
-              sizes: '512x512',
-              type: 'image/png',
-              purpose: 'any maskable'
-            },
-            {
-              src: '/pwa-192x192.png',
-              sizes: '192x192',
-              type: 'image/png'
-            }
-          ]
-        },
-        devOptions: {
-          enabled: false // Disable PWA in development to avoid manifest conflicts
-        }
-      }),
-      {
-        name: 'html-transform',
-        transformIndexHtml(html) {
-          return html.replace(/%VITE_PAYPAL_CLIENT_ID%/g, env.VITE_PAYPAL_CLIENT_ID || '');
-        }
-      }
-    ],
-    assetsInclude: ['**/*.svg'],
-    resolve: {
-      alias: {
-        '@': '/src',
-        '@components': '/src/components',
-        '@config': '/src/config',
-        '@context': '/src/context',
-        '@utils': '/src/utils'
-      }
-    },
-    optimizeDeps: {
-      exclude: ['lucide-react']
-    },
-    server: {
-      port: 5173,
-      strictPort: false,
-      host: true,
-      open: false
-    },
-    build: {
-      rollupOptions: {
-        output: {
-          manualChunks: {
-            vendor: ['react', 'react-dom'],
-            utils: ['lodash']
+export default defineConfig({
+  target: 'esnext',
+  sourcemap: true,
+  plugins: [
+    react(),
+    // Custom plugin to handle email API
+    {
+      name: 'email-api',
+      configureServer(server) {
+        server.middlewares.use('/api/send-verification-email', async (req, res, next) => {
+          if (req.method === 'POST') {
+            let body = '';
+            req.on('data', chunk => {
+              body += chunk.toString();
+            });
+            req.on('end', async () => {
+              try {
+                const { email, verificationCode, verificationToken, name, fullName, isResend, isCodeVerification } = JSON.parse(body);
+                
+                // Use fullName if name is not provided (for compatibility)
+                const displayName = name || fullName || email.split('@')[0];
+                
+                console.log('📧 Vite API: Received request:', { 
+                  email, 
+                  displayName, 
+                  hasCode: !!verificationCode,
+                  hasToken: !!verificationToken,
+                  isResend: !!isResend,
+                  isCodeVerification: !!isCodeVerification
+                });
+
+                // Check if we have either code or token
+                if (!email || (!verificationCode && !verificationToken)) {
+                  res.writeHead(400, { 'Content-Type': 'application/json' });
+                  res.end(JSON.stringify({ success: false, error: 'Missing email or verification code/token' }));
+                  return;
+                }
+
+                let emailContent;
+                let subject;
+
+                if (isCodeVerification && verificationCode) {
+                  // NEW: Code-based verification email
+                  subject = isResend ? '🔄 Your New EarnPro Verification Code' : '🔐 Your EarnPro Verification Code';
+                  emailContent = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                      <meta charset="utf-8">
+                      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                      <title>Your EarnPro Verification Code</title>
+                    </head>
+                    <body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+                      <div style="max-width: 600px; margin: 0 auto; background-color: white; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px; text-align: center;">
+                          <h1 style="color: white; margin: 0; font-size: 32px; font-weight: bold;">EarnPro</h1>
+                          <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0 0; font-size: 16px;">Multi-Level Referral System</p>
+                        </div>
+                        <div style="padding: 40px 30px;">
+                          <div style="text-align: center; margin-bottom: 30px;">
+                            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
+                              <span style="color: white; font-size: 36px;">🔐</span>
+                            </div>
+                            <h2 style="color: #2d3748; margin: 0 0 10px 0; font-size: 28px;">
+                              ${isResend ? 'New Verification Code' : 'Verify Your Email Address'}
+                            </h2>
+                            <p style="color: #4a5568; margin: 0; font-size: 16px; line-height: 1.5;">
+                              Hi ${displayName}! ${isResend ? 'Here is your new verification code.' : 'Welcome to EarnPro. Please enter the verification code below to complete your registration.'}
+                            </p>
+                          </div>
+                          
+                          <div style="background: linear-gradient(135deg, #e6fffa 0%, #f0fff4 100%); border: 2px solid #48bb78; border-radius: 12px; padding: 30px; text-align: center; margin: 30px 0;">
+                            <h3 style="color: #2f855a; font-size: 18px; margin: 0 0 15px 0;">Your Verification Code</h3>
+                            <div style="background: white; padding: 20px; border-radius: 8px; margin: 15px 0;">
+                              <span style="font-size: 36px; font-weight: bold; color: #2d3748; letter-spacing: 8px; font-family: 'Courier New', monospace;">
+                                ${verificationCode}
+                              </span>
+                            </div>
+                            <p style="color: #4a5568; font-size: 14px; margin: 10px 0 0 0;">
+                              Enter this code on the verification page to continue
+                            </p>
+                          </div>
+
+                          <div style="background: #fff5cd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #eab308;">
+                            <p style="color: #92400e; font-size: 14px; margin: 0 0 10px 0; font-weight: bold;">⚠️ Important Security Notice</p>
+                            <p style="color: #92400e; font-size: 14px; margin: 0; line-height: 1.4;">
+                              This verification code will expire in 15 minutes for your security. If you did not request this, please ignore this email.
+                            </p>
+                          </div>
+
+                          <div style="text-align: center; margin: 30px 0;">
+                            <p style="color: #4a5568; font-size: 16px; margin: 0;">
+                              After verification, you'll be redirected to complete your payment setup and start earning immediately!
+                            </p>
+                          </div>
+                        </div>
+                        <div style="background: #f8fafc; padding: 20px; text-align: center; color: #718096; font-size: 12px;">
+                          <p style="margin: 0;">© 2025 EarnPro. This email was sent to ${email}</p>
+                        </div>
+                      </div>
+                    </body>
+                    </html>
+                  `;
+                } else {
+                  // OLD: Token-based verification email (fallback)
+                  const verificationUrl = `https://bmtaqilpuszwoshtizmq.supabase.co/functions/v1/verify-email?token=${verificationToken}`;
+                  subject = isResend ? '🔄 EarnPro Email Verification - Resent' : '🔐 Verify Your EarnPro Account - Action Required';
+                  emailContent = `
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                      <meta charset="utf-8">
+                      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                      <title>Verify Your EarnPro Account</title>
+                    </head>
+                    <body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+                      <div style="max-width: 600px; margin: 0 auto; background-color: white; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+                        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px; text-align: center;">
+                          <h1 style="color: white; margin: 0; font-size: 32px; font-weight: bold;">EarnPro</h1>
+                          <p style="color: rgba(255,255,255,0.9); margin: 8px 0 0 0; font-size: 16px;">Multi-Level Referral System</p>
+                        </div>
+                        <div style="padding: 40px 30px;">
+                          <div style="text-align: center; margin-bottom: 30px;">
+                            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); width: 80px; height: 80px; border-radius: 50%; margin: 0 auto 20px; display: flex; align-items: center; justify-content: center;">
+                              <span style="color: white; font-size: 36px;">${isResend ? '🔄' : '📧'}</span>
+                            </div>
+                            <h2 style="color: #2d3748; margin: 0 0 10px 0; font-size: 28px;">
+                              ${isResend ? 'New Verification Link' : 'Verify Your Email Address'}
+                            </h2>
+                            <p style="color: #4a5568; margin: 0; font-size: 16px; line-height: 1.5;">
+                              Hi ${displayName}! ${isResend ? 'Here is your new verification link.' : 'Welcome to EarnPro. Please click the button below to verify your email address and complete your registration.'}
+                            </p>
+                          </div>
+                          <div style="text-align: center; margin: 40px 0;">
+                            <a href="${verificationUrl}" 
+                               style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                                      color: white; 
+                                      padding: 16px 32px; 
+                                      text-decoration: none; 
+                                      border-radius: 8px; 
+                                      font-weight: bold; 
+                                      font-size: 16px;
+                                      display: inline-block;
+                                      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);">
+                              ✅ Verify Email Address
+                            </a>
+                          </div>
+                          <div style="background: #fff5cd; padding: 20px; border-radius: 8px; margin: 20px 0; border-left: 4px solid #eab308;">
+                            <p style="color: #92400e; font-size: 14px; margin: 0 0 10px 0; font-weight: bold;">⚠️ Important Security Notice</p>
+                            <p style="color: #92400e; font-size: 14px; margin: 0; line-height: 1.4;">
+                              This verification link will expire in 24 hours for your security. If you did not request this, please ignore this email.
+                            </p>
+                          </div>
+                          <div style="border-top: 1px solid #e2e8f0; padding-top: 20px; margin-top: 30px;">
+                            <p style="color: #718096; font-size: 14px; margin: 0 0 10px 0;">
+                              <strong>Button not working?</strong> Copy and paste this link into your browser:
+                            </p>
+                            <p style="color: #667eea; font-size: 12px; word-break: break-all; background: #f7fafc; padding: 10px; border-radius: 4px; margin: 0;">
+                              ${verificationUrl}
+                            </p>
+                          </div>
+                        </div>
+                        <div style="background: #f8fafc; padding: 20px; text-align: center; color: #718096; font-size: 12px;">
+                          <p style="margin: 0;">© 2025 EarnPro. This email was sent to ${email}</p>
+                        </div>
+                      </div>
+                    </body>
+                    </html>
+                  `;
+                }
+
+                const emailData = {
+                  personalizations: [{
+                    to: [{ email: email, name: name || email.split('@')[0] }],
+                    subject: subject
+                  }],
+                  from: {
+                    email: 'noreply@earnpro.org',
+                    name: 'EarnPro Team'
+                  },
+                  content: [{
+                    type: 'text/html',
+                    value: emailContent
+                  }]
+                };
+
+                console.log('📤 Vite API: Making request to SendGrid...');
+                const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer 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`,
+                    'Content-Type': 'application/json'
+                  },
+                  body: JSON.stringify(emailData)
+                });
+
+                console.log('📨 Vite API: SendGrid response status:', response.status);
+
+                if (response.ok || response.status === 202) {
+                  console.log('✅ Vite API: Verification email sent successfully');
+                  res.writeHead(200, { 'Content-Type': 'application/json' });
+                  res.end(JSON.stringify({ 
+                    success: true, 
+                    message: 'Email sent successfully'
+                  }));
+                } else {
+                  const errorText = await response.text();
+                  console.error('❌ Vite API: SendGrid error:', response.status, errorText);
+                  res.writeHead(500, { 'Content-Type': 'application/json' });
+                  res.end(JSON.stringify({ success: false, error: `SendGrid error: ${response.status}` }));
+                }
+
+              } catch (error: any) {
+                console.error('❌ Vite API: Error:', error);
+                res.writeHead(500, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: error?.message || 'Unknown error' }));
+              }
+            });
+          } else {
+            next();
           }
-        }
+        });
       }
     }
-  };
-});
+  ],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src')
+    }
+  },
+  define: {
+    global: 'globalThis',
+    'process.env': {},
+    'process.platform': JSON.stringify('browser'),
+    'process.version': JSON.stringify('v18.0.0')
+  },
+  optimizeDeps: {
+    exclude: ['braintree'],
+    include: ['react', 'react-dom', 'react-router-dom', '@stripe/stripe-js', '@paypal/react-paypal-js']
+  },
+  server: {
+    port: 5173,
+    strictPort: true, // Force port 5173
+    // Removed HTTPS for now - causes SSL issues
+    fs: {
+      strict: false
+    }
+  }
+})

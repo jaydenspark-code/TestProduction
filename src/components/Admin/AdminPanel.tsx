@@ -1,10 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { CheckCircle, XCircle, Clock, Eye, User, ExternalLink, Briefcase } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Eye, User, ExternalLink, Briefcase, DollarSign, Target, Brain, Shield, Zap, Users, Youtube, MessageCircle, Twitter, Instagram, Camera } from 'lucide-react';
+import TransactionsPortal from './TransactionsPortal';
+import TestAccountManager from './TestAccountManager';
+import CampaignManagement from './CampaignManagement';
+import AICampaignOrchestrator from './AICampaignOrchestrator';
+import AgentManagement from './AgentManagement';
+import EmailMonitoringDashboard from './EmailMonitoringDashboard';
 import { useTheme } from '../../context/ThemeContext';
 import { useAgentApplications, AgentApplication } from '../../context/AgentApplicationContext';
 import { useAdvertiserApplications, AdvertiserApplication } from '../../context/AdvertiserApplicationContext';
+import { analyzeLink } from '../../utils/linkDetection';
 // Add missing imports
 import { aiAnalyticsService } from '../../services/aiAnalyticsService';
 import type { 
@@ -25,11 +32,52 @@ const AdminPanel: React.FC = () => {
   const [reviewNotes, setReviewNotes] = useState('');
   const [loading, setLoading] = useState(false);
 
+  // Enhanced social media analysis state
+  const [socialAnalysis, setSocialAnalysis] = useState<{[key: string]: any}>({});
+  const [analyzingChannels, setAnalyzingChannels] = useState<Set<string>>(new Set());
+
   // Analytics state with proper typing
   const [userSegments, setUserSegments] = useState<UserSegment[]>([]);
   const [anomalies, setAnomalies] = useState<AnomalyDetection[]>([]);
   const [revenuePrediction, setRevenuePrediction] = useState<PredictiveInsight | null>(null);
   const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(false);
+
+  // Get platform icon component
+  const getPlatformIcon = (platform: string) => {
+    const icons: { [key: string]: React.ComponentType<any> } = {
+      'YouTube': Youtube,
+      'Telegram': MessageCircle,
+      'Twitter/X': Twitter,
+      'Twitter': Twitter,
+      'Instagram': Instagram,
+      'TikTok': Users,
+      'Snapchat': Camera
+    };
+    return icons[platform] || Users;
+  };
+
+  // Analyze social media channel for real-time data
+  const analyzeSocialChannel = async (app: AgentApplication) => {
+    if (!app.channelLink || analyzingChannels.has(app.id)) return;
+
+    setAnalyzingChannels(prev => new Set(prev).add(app.id));
+    
+    try {
+      const analysis = await analyzeLink(app.channelLink);
+      setSocialAnalysis(prev => ({
+        ...prev,
+        [app.id]: analysis
+      }));
+    } catch (error) {
+      console.error('Error analyzing channel:', error);
+    } finally {
+      setAnalyzingChannels(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(app.id);
+        return newSet;
+      });
+    }
+  };
 
   // Check if user is admin
   useEffect(() => {
@@ -199,15 +247,60 @@ const AdminPanel: React.FC = () => {
                 Advertiser Applications
               </button>
               <button
+                onClick={() => setActiveTab('agent-management')}
+                className={`px-6 py-2 text-sm font-medium rounded-full transition-colors ${activeTab === 'agent-management' ? colors.tabActive : colors.tabInactive}`}>
+                <div className="flex items-center space-x-2">
+                  <Shield className="w-4 h-4" />
+                  <span>Agent Management</span>
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveTab('campaigns')}
+                className={`px-6 py-2 text-sm font-medium rounded-full transition-colors ${activeTab === 'campaigns' ? colors.tabActive : colors.tabInactive}`}>
+                <div className="flex items-center space-x-2">
+                  <Target className="w-4 h-4" />
+                  <span>Campaigns</span>
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveTab('ai-orchestrator')}
+                className={`px-6 py-2 text-sm font-medium rounded-full transition-colors ${activeTab === 'ai-orchestrator' ? colors.tabActive : colors.tabInactive}`}>
+                <div className="flex items-center space-x-2">
+                  <Brain className="w-4 h-4" />
+                  <span>AI Orchestrator</span>
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveTab('transactions')}
+                className={`px-6 py-2 text-sm font-medium rounded-full transition-colors ${activeTab === 'transactions' ? colors.tabActive : colors.tabInactive}`}>
+                <div className="flex items-center space-x-2">
+                  <DollarSign className="w-4 h-4" />
+                  <span>Transactions</span>
+                </div>
+              </button>
+              <button
                 onClick={() => setActiveTab('analytics')}
                 className={`px-6 py-2 text-sm font-medium rounded-full transition-colors ${activeTab === 'analytics' ? colors.tabActive : colors.tabInactive}`}>
                 Analytics
+              </button>
+              <button
+                onClick={() => setActiveTab('email-monitoring')}
+                className={`px-6 py-2 text-sm font-medium rounded-full transition-colors ${activeTab === 'email-monitoring' ? colors.tabActive : colors.tabInactive}`}>
+                <div className="flex items-center space-x-2">
+                  <MessageCircle className="w-4 h-4" />
+                  <span>Email System</span>
+                </div>
+              </button>
+              <button
+                onClick={() => setActiveTab('testAccounts')}
+                className={`px-6 py-2 text-sm font-medium rounded-full transition-colors ${activeTab === 'testAccounts' ? colors.tabActive : colors.tabInactive}`}>
+                Test Accounts
               </button>
             </div>
           </div>
 
           {/* Stats */}
-          {activeTab !== 'analytics' && (
+          {activeTab !== 'analytics' && activeTab !== 'testAccounts' && activeTab !== 'agent-management' && activeTab !== 'campaigns' && activeTab !== 'ai-orchestrator' && activeTab !== 'transactions' && activeTab !== 'email-monitoring' && (
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
               <div className={colors.card}>
                 <div className="text-center">
@@ -448,6 +541,36 @@ const AdminPanel: React.FC = () => {
             </div>
           )}
 
+          {/* Campaign Management */}
+          {activeTab === 'campaigns' && (
+            <CampaignManagement />
+          )}
+
+          {/* Agent Management */}
+          {activeTab === 'agent-management' && (
+            <AgentManagement />
+          )}
+
+          {/* AI Campaign Orchestrator */}
+          {activeTab === 'ai-orchestrator' && (
+            <AICampaignOrchestrator />
+          )}
+
+          {/* Transactions Portal */}
+          {activeTab === 'transactions' && (
+            <TransactionsPortal />
+          )}
+
+          {/* Test Accounts Manager */}
+          {activeTab === 'testAccounts' && (
+            <TestAccountManager />
+          )}
+
+          {/* Email Monitoring Dashboard */}
+          {activeTab === 'email-monitoring' && (
+            <EmailMonitoringDashboard />
+          )}
+
           {/* Agent Applications */}
           {activeTab === 'agents' && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -478,7 +601,13 @@ const AdminPanel: React.FC = () => {
                       <div className="grid grid-cols-2 gap-3 mb-3 text-sm">
                         <div>
                           <span className={colors.textSecondary}>Platform:</span>
-                          <div className={`font-medium ${colors.textPrimary}`}>{app.platformName}</div>
+                          <div className={`font-medium ${colors.textPrimary} flex items-center`}>
+                            {(() => {
+                              const Icon = getPlatformIcon(app.platformName);
+                              return <Icon className={`w-4 h-4 mr-2 ${colors.iconPrimary}`} />;
+                            })()}
+                            {app.platformName}
+                          </div>
                         </div>
                         <div>
                           <span className={colors.textSecondary}>Username:</span>
@@ -486,7 +615,30 @@ const AdminPanel: React.FC = () => {
                         </div>
                         <div>
                           <span className={colors.textSecondary}>Followers:</span>
-                          <div className={`font-bold ${colors.statusApproved}`}>{app.followerCount.toLocaleString()}</div>
+                          <div className={`font-bold ${colors.statusApproved} flex items-center`}>
+                            {socialAnalysis[app.id] ? (
+                              <>
+                                {(socialAnalysis[app.id].followers || socialAnalysis[app.id].subscribers || app.followerCount).toLocaleString()}
+                                <Zap className="w-3 h-3 ml-1 text-green-400" title="Real-time data" />
+                              </>
+                            ) : (
+                              <>
+                                {app.followerCount.toLocaleString()}
+                                <button 
+                                  onClick={() => analyzeSocialChannel(app)}
+                                  disabled={analyzingChannels.has(app.id)}
+                                  className="ml-2 text-blue-400 hover:text-blue-300"
+                                  title="Get real-time data"
+                                >
+                                  {analyzingChannels.has(app.id) ? (
+                                    <div className="w-3 h-3 border border-blue-400 border-t-transparent rounded-full animate-spin" />
+                                  ) : (
+                                    <Zap className="w-3 h-3" />
+                                  )}
+                                </button>
+                              </>
+                            )}
+                          </div>
                         </div>
                         <div>
                           <span className={colors.textSecondary}>Channel:</span>
@@ -497,6 +649,44 @@ const AdminPanel: React.FC = () => {
                           </a>
                         </div>
                       </div>
+
+                      {/* Enhanced Social Media Analysis */}
+                      {socialAnalysis[app.id] && (
+                        <div className="mb-3 p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-green-300 text-sm font-medium">📊 Real-time Analysis</span>
+                            <div className="flex items-center space-x-2">
+                              {socialAnalysis[app.id].verified && (
+                                <Shield className="w-4 h-4 text-blue-300" title="Verified account" />
+                              )}
+                              <span className={`text-xs px-2 py-1 rounded ${
+                                socialAnalysis[app.id].source === 'real-time' ? 'bg-green-600/20 text-green-300' : 'bg-blue-600/20 text-blue-300'
+                              }`}>
+                                {socialAnalysis[app.id].displayMessage || socialAnalysis[app.id].source}
+                              </span>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-sm">
+                            {socialAnalysis[app.id].engagement && (
+                              <div>
+                                <span className="text-white/70">Engagement:</span>
+                                <span className="ml-2 text-green-300 font-medium">
+                                  {socialAnalysis[app.id].engagement}%
+                                </span>
+                              </div>
+                            )}
+                            <div>
+                              <span className="text-white/70">Confidence:</span>
+                              <span className={`ml-2 font-medium ${
+                                socialAnalysis[app.id].confidence === 'high' ? 'text-green-300' :
+                                socialAnalysis[app.id].confidence === 'medium' ? 'text-yellow-300' : 'text-orange-300'
+                              }`}>
+                                {socialAnalysis[app.id].confidence}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                       
                       {app.additionalInfo && (
                         <div className="mb-3">
@@ -763,20 +953,98 @@ const AdminPanel: React.FC = () => {
                 </div>
                 <div>
                   <label className={`${colors.textSecondary} text-sm`}>Platform</label>
-                  <div className={`${colors.textPrimary} font-medium`}>{selectedApp.platformName}</div>
+                  <div className={`${colors.textPrimary} font-medium flex items-center`}>
+                    {(() => {
+                      const Icon = getPlatformIcon(selectedApp.platformName);
+                      return <Icon className={`w-5 h-5 mr-2 ${colors.iconPrimary}`} />;
+                    })()}
+                    {selectedApp.platformName}
+                    {socialAnalysis[selectedApp.id]?.verified && (
+                      <Shield className="w-4 h-4 ml-2 text-blue-300" title="Verified account" />
+                    )}
+                  </div>
                   <div className={`${colors.textSecondary} text-sm`}>@{selectedApp.username}</div>
                 </div>
               </div>
 
               <div>
                 <label className={`${colors.textSecondary} text-sm`}>Channel Link</label>
-                <div className="text-cyan-300 break-all">{selectedApp.channelLink}</div>
+                <div className="flex items-center space-x-2">
+                  <div className="text-cyan-300 break-all flex-1">{selectedApp.channelLink}</div>
+                  <button 
+                    onClick={() => analyzeSocialChannel(selectedApp)}
+                    disabled={analyzingChannels.has(selectedApp.id)}
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm"
+                    title="Get real-time analysis"
+                  >
+                    {analyzingChannels.has(selectedApp.id) ? 'Analyzing...' : 'Analyze'}
+                  </button>
+                </div>
               </div>
 
               <div>
                 <label className={`${colors.textSecondary} text-sm`}>Follower Count</label>
-                <div className="text-emerald-300 font-bold">{selectedApp.followerCount.toLocaleString()}</div>
+                <div className="flex items-center space-x-2">
+                  <div className="text-emerald-300 font-bold">
+                    {socialAnalysis[selectedApp.id] ? (
+                      (socialAnalysis[selectedApp.id].followers || socialAnalysis[selectedApp.id].subscribers || selectedApp.followerCount).toLocaleString()
+                    ) : (
+                      selectedApp.followerCount.toLocaleString()
+                    )}
+                  </div>
+                  {socialAnalysis[selectedApp.id] && (
+                    <span className={`text-xs px-2 py-1 rounded ${
+                      socialAnalysis[selectedApp.id].source === 'real-time' 
+                        ? 'bg-green-600/20 text-green-300' 
+                        : 'bg-blue-600/20 text-blue-300'
+                    }`}>
+                      {socialAnalysis[selectedApp.id].displayMessage || socialAnalysis[selectedApp.id].source}
+                    </span>
+                  )}
+                </div>
               </div>
+
+              {/* Enhanced Social Media Details */}
+              {socialAnalysis[selectedApp.id] && (
+                <div className="bg-green-500/10 border border-green-500/30 rounded-lg p-4">
+                  <h4 className="text-green-300 font-medium mb-3 flex items-center">
+                    <Zap className="w-4 h-4 mr-2" />
+                    Real-time Social Media Analysis
+                  </h4>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    {socialAnalysis[selectedApp.id].engagement && (
+                      <div>
+                        <span className="text-white/70">Engagement Rate:</span>
+                        <div className="text-green-300 font-medium">{socialAnalysis[selectedApp.id].engagement}%</div>
+                      </div>
+                    )}
+                    <div>
+                      <span className="text-white/70">Data Confidence:</span>
+                      <div className={`font-medium ${
+                        socialAnalysis[selectedApp.id].confidence === 'high' ? 'text-green-300' :
+                        socialAnalysis[selectedApp.id].confidence === 'medium' ? 'text-yellow-300' : 'text-orange-300'
+                      }`}>
+                        {socialAnalysis[selectedApp.id].confidence?.toUpperCase()}
+                      </div>
+                    </div>
+                    <div>
+                      <span className="text-white/70">Data Source:</span>
+                      <div className="text-blue-300 font-medium">
+                        {socialAnalysis[selectedApp.id].source === 'real-time' ? 'Real-time API' : 'Curated Database'}
+                      </div>
+                    </div>
+                    {socialAnalysis[selectedApp.id].verified && (
+                      <div>
+                        <span className="text-white/70">Verification:</span>
+                        <div className="text-blue-300 font-medium flex items-center">
+                          <Shield className="w-4 h-4 mr-1" />
+                          Verified Account
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
 
               {selectedApp.additionalInfo && (
                 <div>

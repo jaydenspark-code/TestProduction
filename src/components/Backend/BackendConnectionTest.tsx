@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { CheckCircle, XCircle, Loader2, Database, User, Zap, RefreshCw } from 'lucide-react';
 import { RealBackendService } from '../../services/realBackendService';
 import { useTheme } from '../../context/ThemeContext';
@@ -20,7 +20,7 @@ const BackendConnectionTest: React.FC = () => {
   const [overallStatus, setOverallStatus] = useState<'testing' | 'success' | 'partial' | 'failed'>('testing');
   const [isRunning, setIsRunning] = useState(false);
 
-  const runTests = async () => {
+  const runTests = useCallback(async () => {
     setIsRunning(true);
     setOverallStatus('testing');
     
@@ -97,7 +97,7 @@ const BackendConnectionTest: React.FC = () => {
     } finally {
       setIsRunning(false);
     }
-  };
+  }, [tests]);
 
   useEffect(() => {
     // Auto-run tests on mount

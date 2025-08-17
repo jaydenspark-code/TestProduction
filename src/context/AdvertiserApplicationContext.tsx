@@ -111,9 +111,14 @@ export const AdvertiserApplicationProvider: React.FC<{ children: ReactNode }> = 
     setApplications(prev => [...prev, newApplication]);
   };
 
-  const updateApplicationStatus = (applicationId: string, status: 'approved' | 'rejected', notes: string, reviewedBy: string) => {
+  const updateApplicationStatus = async (applicationId: string, status: 'approved' | 'rejected', notes: string, reviewedBy: string) => {
     // Note: In a real application, this would update the applicant's role in the database
     // but should NOT update the current admin user's role
+    
+    // Find the application to get user details
+    const application = applications.find(app => app.id === applicationId);
+    
+    // Update local state
     setApplications(prev =>
       prev.map(app =>
         app.id === applicationId
@@ -121,6 +126,23 @@ export const AdvertiserApplicationProvider: React.FC<{ children: ReactNode }> = 
           : app
       )
     );
+
+    // Send email notification if application found
+    if (application) {
+      try {
+        const { emailService } = await import('../services/emailService');
+        await emailService.sendApplicationStatusUpdate({
+          email: application.userEmail,
+          fullName: application.userName,
+          applicationType: 'advertiser',
+          status: status,
+          feedback: notes
+        });
+        console.log(`📧 Status email sent to ${application.userEmail}`);
+      } catch (error) {
+        console.error('Failed to send status email:', error);
+      }
+    }
   };
 
   return (

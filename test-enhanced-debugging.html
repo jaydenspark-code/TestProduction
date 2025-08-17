@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Braintree Debugging</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .test-button {
+            background: #4CAF50;
+            color: white;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        .test-button:hover {
+            background: #45a049;
+        }
+        .debug-button {
+            background: #2196F3;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+        }
+        #braintree-container {
+            margin-top: 20px;
+            min-height: 300px;
+            border: 3px solid #4CAF50;
+            border-radius: 8px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f9f9f9, #ffffff);
+        }
+        .log {
+            background: #1e1e1e;
+            color: #f0f0f0;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .debug-section {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border-left: 4px solid #007bff;
+        }
+        .token-display {
+            background: #f1f3f4;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            word-break: break-all;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Enhanced Braintree Debugging</h1>
+        <p><strong>Advanced debugging with detailed error handling and logging</strong></p>
+        
+        <div id="status" class="status info">
+            Ready to start enhanced debugging...
+        </div>
+        
+        <div class="debug-section">
+            <h3>🔧 Debug Controls</h3>
+            <button class="debug-button" onclick="checkEnvironment()">🔍 Check Environment</button>
+            <button class="debug-button" onclick="validateClientToken()">🎫 Validate Token</button>
+            <button class="debug-button" onclick="testDropinConfig()">⚙️ Test Config</button>
+            <button class="debug-button" onclick="createDropinWithLogging()">🚀 Create Drop-in</button>
+            <button class="debug-button" onclick="clearLog()">🧹 Clear Log</button>
+        </div>
+
+        <div class="debug-section">
+            <h3>📊 Environment Status</h3>
+            <div id="env-status">Click "Check Environment" to analyze...</div>
+        </div>
+
+        <div class="debug-section">
+            <h3>🎫 Client Token Status</h3>
+            <div id="token-status">Click "Validate Token" to check...</div>
+            <div id="token-display" class="token-display" style="display: none;"></div>
+        </div>
+        
+        <div id="log" class="log">Enhanced debugging console - detailed logs will appear here...</div>
+        
+        <div id="braintree-container">
+            <h3>🎨 Braintree Drop-in Container</h3>
+            <p>Follow the debug steps above to systematically test the integration.</p>
+        </div>
+    </div>
+
+    <script type="module">
+        // Enhanced logging system
+        const logDiv = document.getElementById('log');
+        const statusDiv = document.getElementById('status');
+        
+        function addToLog(message, type = 'info', detail = null) {
+            const timestamp = new Date().toISOString().substring(11, 23);
+            let color = '#f0f0f0';
+            let icon = '📝';
+            
+            switch(type) {
+                case 'error': color = '#ff6b6b'; icon = '❌'; break;
+                case 'success': color = '#4CAF50'; icon = '✅'; break;
+                case 'warning': color = '#ffeb3b'; icon = '⚠️'; break;
+                case 'info': color = '#87CEEB'; icon = '💡'; break;
+                case 'debug': color = '#DDA0DD'; icon = '🔍'; break;
+            }
+            
+            let logEntry = `<div style="color: ${color}; margin: 2px 0;">[${timestamp}] ${icon} ${message}</div>`;
+            
+            if (detail) {
+                logEntry += `<div style="color: #ccc; font-size: 11px; margin-left: 20px; white-space: pre-wrap;">${JSON.stringify(detail, null, 2)}</div>`;
+            }
+            
+            logDiv.innerHTML += logEntry;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            
+            // Update main status
+            if (type === 'error') {
+                statusDiv.className = 'status error';
+                statusDiv.textContent = '❌ Error detected - check log';
+            } else if (type === 'success') {
+                statusDiv.className = 'status success';
+                statusDiv.textContent = '✅ Operation successful';
+            }
+        }
+        
+        // Override console for enhanced logging
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToLog(args.join(' '), 'info');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToLog(args.join(' '), 'error');
+        };
+
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addToLog(args.join(' '), 'warning');
+        };
+        
+        window.clearLog = function() {
+            logDiv.innerHTML = 'Log cleared - ready for new debugging session...';
+            statusDiv.className = 'status info';
+            statusDiv.textContent = 'Log cleared - ready for debugging';
+        };
+
+        // Global variables for debugging
+        let dropinModule = null;
+        let dropinInstance = null;
+        let lastClientToken = null;
+        let environmentInfo = {};
+
+        // Step 1: Check Environment
+        window.checkEnvironment = async function() {
+            addToLog('🔍 STEP 1: Checking environment and dependencies...', 'info');
+            const envStatus = document.getElementById('env-status');
+            
+            try {
+                // Check if we're in a secure context
+                const isSecure = window.isSecureContext;
+                addToLog(`🔒 Secure context: ${isSecure}`, isSecure ? 'success' : 'warning');
+                
+                // Check current URL
+                addToLog(`🌐 Current URL: ${window.location.href}`, 'info');
+                
+                // Try to import braintree-web-drop-in
+                try {
+                    addToLog('📦 Attempting to import braintree-web-drop-in...', 'debug');
+                    dropinModule = await import('braintree-web-drop-in');
+                    addToLog('✅ Successfully imported braintree-web-drop-in', 'success');
+                    addToLog('📋 Available methods:', 'debug', Object.keys(dropinModule));
+                    
+                    // Check if create method exists
+                    if (typeof dropinModule.create === 'function') {
+                        addToLog('✅ create() method is available', 'success');
+                    } else {
+                        addToLog('❌ create() method not found', 'error');
+                    }
+                    
+                } catch (importError) {
+                    addToLog('❌ Failed to import braintree-web-drop-in', 'error', importError);
+                    throw importError;
+                }
+                
+                // Try to import braintree-web
+                try {
+                    const braintreeWeb = await import('braintree-web');
+                    addToLog('✅ Successfully imported braintree-web', 'success');
+                    addToLog('📋 Braintree-web methods:', 'debug', Object.keys(braintreeWeb));
+                } catch (webError) {
+                    addToLog('⚠️ Could not import braintree-web (this might be OK)', 'warning', webError);
+                }
+                
+                environmentInfo = {
+                    secure: isSecure,
+                    url: window.location.href,
+                    dropinAvailable: !!dropinModule,
+                    createMethodAvailable: !!(dropinModule && dropinModule.create)
+                };
+                
+                envStatus.innerHTML = `
+                    <div style="color: green;">✅ Environment Check Complete</div>
+                    <div>🔒 Secure Context: ${isSecure}</div>
+                    <div>📦 Drop-in Module: ${dropinModule ? 'Available' : 'Not Available'}</div>
+                    <div>🔧 Create Method: ${dropinModule?.create ? 'Available' : 'Not Available'}</div>
+                `;
+                
+                addToLog('✅ STEP 1 COMPLETE: Environment check passed', 'success');
+                
+            } catch (error) {
+                addToLog('❌ STEP 1 FAILED: Environment check failed', 'error', error);
+                envStatus.innerHTML = `<div style="color: red;">❌ Environment Check Failed: ${error.message}</div>`;
+                throw error;
+            }
+        };
+
+        // Step 2: Validate Client Token
+        window.validateClientToken = async function() {
+            addToLog('🎫 STEP 2: Validating client token...', 'info');
+            const tokenStatus = document.getElementById('token-status');
+            const tokenDisplay = document.getElementById('token-display');
+            
+            try {
+                addToLog('🌐 Requesting fresh client token from Braintree API...', 'debug');
+                
+                // Real credentials for token generation
+                const credentials = btoa('sgfjmfv929kzffsr:4edc8a7489369f8e7d5cb8c9a8066c17');
+                const requestBody = `<?xml version="1.0" encoding="UTF-8"?><client-token></client-token>`;
+                const apiUrl = 'https://api.sandbox.braintreegateway.com/merchants/2yhrvbtjszdbvxtt/client_token';
+                
+                addToLog('📡 Making API request to Braintree...', 'debug');
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Basic ${credentials}`,
+                        'Content-Type': 'application/xml',
+                        'Accept': 'application/xml',
+                        'Braintree-Version': '2019-01-01'
+                    },
+                    body: requestBody
+                });
+                
+                addToLog(`📡 API Response Status: ${response.status} ${response.statusText}`, 'debug');
+                
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status} ${response.statusText}`);
+                }
+                
+                const responseText = await response.text();
+                addToLog('📡 Received API response, parsing XML...', 'debug');
+                
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(responseText, 'text/xml');
+                
+                // Check for errors in XML
+                const errorElements = xmlDoc.querySelectorAll('error');
+                if (errorElements.length > 0) {
+                    const errorMessages = Array.from(errorElements).map(el => el.textContent);
+                    throw new Error(`API returned errors: ${errorMessages.join(', ')}`);
+                }
+                
+                const clientTokenElement = xmlDoc.querySelector('client-token');
+                
+                if (!clientTokenElement) {
+                    addToLog('❌ No client token found in API response', 'error', responseText);
+                    throw new Error('No client token found in response');
+                }
+                
+                const token = clientTokenElement.textContent.trim();
+                lastClientToken = token;
+                
+                addToLog(`✅ Client token obtained successfully`, 'success');
+                addToLog(`📏 Token length: ${token.length} characters`, 'debug');
+                addToLog(`🔑 Token prefix: ${token.substring(0, 20)}...`, 'debug');
+                
+                // Validate token format (should be base64)
+                try {
+                    const decoded = atob(token);
+                    const parsed = JSON.parse(decoded);
+                    addToLog('✅ Token is valid base64 and contains JSON', 'success');
+                    addToLog('🔍 Token contents preview:', 'debug', {
+                        version: parsed.version,
+                        authUrl: parsed.authUrl ? 'Present' : 'Missing',
+                        clientApiUrl: parsed.clientApiUrl ? 'Present' : 'Missing'
+                    });
+                } catch (parseError) {
+                    addToLog('⚠️ Token format validation failed', 'warning', parseError);
+                }
+                
+                tokenStatus.innerHTML = `
+                    <div style="color: green;">✅ Token Validation Complete</div>
+                    <div>📏 Length: ${token.length} characters</div>
+                    <div>🔑 Format: Valid base64 JSON</div>
+                    <div>⏰ Generated: ${new Date().toLocaleTimeString()}</div>
+                `;
+                
+                tokenDisplay.textContent = token;
+                tokenDisplay.style.display = 'block';
+                
+                addToLog('✅ STEP 2 COMPLETE: Token validation passed', 'success');
+                return token;
+                
+            } catch (error) {
+                addToLog('❌ STEP 2 FAILED: Token validation failed', 'error', error);
+                tokenStatus.innerHTML = `<div style="color: red;">❌ Token Validation Failed: ${error.message}</div>`;
+                throw error;
+            }
+        };
+
+        // Step 3: Test Drop-in Configuration
+        window.testDropinConfig = async function() {
+            addToLog('⚙️ STEP 3: Testing Drop-in configuration...', 'info');
+            
+            try {
+                if (!dropinModule) {
+                    throw new Error('Drop-in module not loaded. Run environment check first.');
+                }
+                
+                if (!lastClientToken) {
+                    throw new Error('No client token available. Run token validation first.');
+                }
+                
+                // Test different configuration options
+                const configs = [
+                    {
+                        name: 'Minimal Config',
+                        config: {
+                            authorization: lastClientToken,
+                            container: '#braintree-container'
+                        }
+                    },
+                    {
+                        name: 'Card Only Config',
+                        config: {
+                            authorization: lastClientToken,
+                            container: '#braintree-container',
+                            card: {
+                                cardholderName: {
+                                    required: false
+                                }
+                            }
+                        }
+                    },
+                    {
+                        name: 'Full Config',
+                        config: {
+                            authorization: lastClientToken,
+                            container: '#braintree-container',
+                            paypal: {
+                                flow: 'checkout',
+                                amount: '10.00',
+                                currency: 'USD'
+                            },
+                            card: {
+                                cardholderName: {
+                                    required: false
+                                }
+                            }
+                        }
+                    }
+                ];
+                
+                addToLog('🧪 Testing different configuration options...', 'debug');
+                
+                for (const {name, config} of configs) {
+                    addToLog(`🔧 Testing ${name}...`, 'debug');
+                    addToLog('📋 Configuration:', 'debug', config);
+                    
+                    try {
+                        // Validate configuration structure
+                        if (!config.authorization) {
+                            throw new Error('Missing authorization');
+                        }
+                        if (!config.container) {
+                            throw new Error('Missing container');
+                        }
+                        if (!document.querySelector(config.container)) {
+                            throw new Error(`Container ${config.container} not found in DOM`);
+                        }
+                        
+                        addToLog(`✅ ${name} configuration is valid`, 'success');
+                        
+                    } catch (configError) {
+                        addToLog(`❌ ${name} configuration failed`, 'error', configError);
+                    }
+                }
+                
+                addToLog('✅ STEP 3 COMPLETE: Configuration testing passed', 'success');
+                
+            } catch (error) {
+                addToLog('❌ STEP 3 FAILED: Configuration testing failed', 'error', error);
+                throw error;
+            }
+        };
+
+        // Step 4: Create Drop-in with Enhanced Logging
+        window.createDropinWithLogging = async function() {
+            addToLog('🚀 STEP 4: Creating Drop-in with enhanced logging...', 'info');
+            
+            try {
+                if (!dropinModule) {
+                    throw new Error('Drop-in module not loaded. Run environment check first.');
+                }
+                
+                if (!lastClientToken) {
+                    throw new Error('No client token available. Run token validation first.');
+                }
+                
+                // Clear the container
+                const container = document.getElementById('braintree-container');
+                container.innerHTML = '<h3>🎨 Initializing Braintree Drop-in...</h3>';
+                
+                addToLog('🧹 Container cleared, starting Drop-in creation...', 'debug');
+                
+                // Configuration for Drop-in
+                const dropinConfig = {
+                    authorization: lastClientToken,
+                    container: '#braintree-container',
+                    card: {
+                        cardholderName: {
+                            required: false
+                        }
+                    }
+                };
+                
+                addToLog('🔧 Using configuration:', 'debug', dropinConfig);
+                addToLog('🏗️ Calling braintree-web-drop-in.create()...', 'debug');
+                
+                // Create Drop-in with detailed error handling
+                dropinInstance = await new Promise((resolve, reject) => {
+                    // Set a timeout to catch hanging promises
+                    const timeout = setTimeout(() => {
+                        reject(new Error('Drop-in creation timed out after 30 seconds'));
+                    }, 30000);
+                    
+                    dropinModule.create(dropinConfig, (createError, instance) => {
+                        clearTimeout(timeout);
+                        
+                        if (createError) {
+                            addToLog('❌ Drop-in creation callback received error', 'error', createError);
+                            reject(createError);
+                        } else {
+                            addToLog('✅ Drop-in creation callback received instance', 'success');
+                            resolve(instance);
+                        }
+                    });
+                });
+                
+                addToLog('🎉 Drop-in instance created successfully!', 'success');
+                addToLog('🔍 Instance methods:', 'debug', Object.getOwnPropertyNames(Object.getPrototypeOf(dropinInstance)));
+                
+                // Test instance methods
+                if (typeof dropinInstance.requestPaymentMethod === 'function') {
+                    addToLog('✅ requestPaymentMethod is available', 'success');
+                } else {
+                    addToLog('⚠️ requestPaymentMethod not found', 'warning');
+                }
+                
+                // Add success message to container
+                const successMsg = document.createElement('div');
+                successMsg.innerHTML = `
+                    <div style="background: linear-gradient(135deg, #4CAF50, #45a049); color: white; padding: 20px; margin: 20px 0; border-radius: 8px; text-align: center;">
+                        🎉 <strong>BREAKTHROUGH SUCCESS!</strong> 🎉<br>
+                        Enhanced debugging revealed the solution!<br>
+                        <small>Drop-in created with detailed error handling</small>
+                    </div>
+                `;
+                container.appendChild(successMsg);
+                
+                addToLog('✅ STEP 4 COMPLETE: Drop-in creation successful!', 'success');
+                
+            } catch (error) {
+                addToLog('❌ STEP 4 FAILED: Drop-in creation failed', 'error', error);
+                
+                // Provide detailed error analysis
+                if (error.message.includes('CLIENT_AUTHORIZATION_INVALID')) {
+                    addToLog('🔍 ANALYSIS: Client authorization is invalid. Token may be expired or malformed.', 'warning');
+                } else if (error.message.includes('NETWORK_ERROR')) {
+                    addToLog('🔍 ANALYSIS: Network error detected. Check internet connection.', 'warning');
+                } else if (error.message.includes('timeout')) {
+                    addToLog('🔍 ANALYSIS: Creation timed out. May indicate network or API issues.', 'warning');
+                } else {
+                    addToLog('🔍 ANALYSIS: Unknown error type. Check error details above.', 'warning');
+                }
+                
+                throw error;
+            }
+        };
+
+        // Initialize enhanced debugging
+        addToLog('🔍 Enhanced Braintree debugging loaded', 'info');
+        addToLog('📋 Available debug steps:', 'info');
+        addToLog('  1. Check Environment - Verify NPM packages and imports', 'info');
+        addToLog('  2. Validate Token - Test client token generation and format', 'info');
+        addToLog('  3. Test Config - Validate Drop-in configuration options', 'info');
+        addToLog('  4. Create Drop-in - Create instance with enhanced error handling', 'info');
+        addToLog('🚀 Start with "Check Environment" to begin systematic debugging', 'info');
+    </script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>🎯 FINAL TEST - Public Function</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .info { background-color: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        .warning { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 10px 0; }
+        button { padding: 12px 24px; margin: 5px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #218838; }
+        .test-url { background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 5px; word-break: break-all; border-left: 4px solid #28a745; }
+        .highlight { background: yellow; padding: 2px 4px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <h1>🎯 FINAL TEST - Completely Public Function</h1>
+    
+    <div class="success">
+        <h3>🔥 What's Different Now:</h3>
+        <p>✅ <strong>Removed ALL authentication checks</strong> from the function code</p>
+        <p>✅ <strong>Deployed with --no-verify-jwt flag</strong> to bypass Supabase auth</p>
+        <p>✅ <strong>Function is now truly public</strong> - no headers required</p>
+    </div>
+
+    <div class="warning">
+        <h3>🎯 This Should Finally Work!</h3>
+        <p>If this still gives 401 errors, then there's a deeper Supabase configuration issue.</p>
+    </div>
+
+    <div class="test-url">
+        <strong>🔗 Simple Test URL (No authentication needed):</strong><br>
+        <a href="https://bmtaqilpuszwoshtizmq.supabase.co/functions/v1/verify-email?token=test" target="_blank">
+            https://bmtaqilpuszwoshtizmq.supabase.co/functions/v1/verify-email?token=test
+        </a>
+    </div>
+    
+    <button onclick="testPublicFunction()">🚀 TEST PUBLIC FUNCTION</button>
+    <button onclick="testWithFetch()">🔍 Test with Fetch</button>
+    <button onclick="showEmailURL()">📧 Show Email URL</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const PUBLIC_URL = 'https://bmtaqilpuszwoshtizmq.supabase.co/functions/v1/verify-email?token=test';
+        
+        function addResult(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = type;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}:</strong> ${message}`;
+            results.appendChild(div);
+        }
+
+        function testPublicFunction() {
+            addResult('🔄 Opening truly public function (no auth needed)...', 'info');
+            window.open(PUBLIC_URL, '_blank');
+            addResult('🎯 <span class="highlight">If you see a verification page instead of 401 error, WE SUCCEEDED!</span>', 'success');
+        }
+
+        async function testWithFetch() {
+            addResult('🔍 Testing public function with fetch (no headers)...', 'info');
+            
+            try {
+                const response = await fetch(PUBLIC_URL);
+                
+                addResult(`📡 Response Status: ${response.status} ${response.statusText}`, response.ok ? 'success' : 'error');
+                
+                if (response.status === 401) {
+                    const text = await response.text();
+                    addResult(`❌ Still 401: ${text}`, 'error');
+                    addResult('🔧 This means Supabase infrastructure is still blocking requests', 'warning');
+                } else if (response.ok) {
+                    const text = await response.text();
+                    if (text.includes('Email Verified') || text.includes('Verification Failed')) {
+                        addResult('🎉 <strong>SUCCESS!</strong> Function returned verification page!', 'success');
+                        addResult('✅ Email verification system is now working!', 'success');
+                    } else {
+                        addResult(`📋 Response: ${text.substring(0, 200)}...`, 'info');
+                    }
+                } else {
+                    const text = await response.text();
+                    addResult(`📋 Unexpected response: ${text.substring(0, 200)}...`, 'warning');
+                }
+                
+            } catch (error) {
+                addResult(`❌ Network Error: ${error.message}`, 'error');
+            }
+        }
+
+        function showEmailURL() {
+            addResult(`
+                <h3>📧 Final Email Verification URL Template:</h3>
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; font-family: monospace; margin: 10px 0;">
+                <strong>For SendGrid emails:</strong><br><br>
+                https://bmtaqilpuszwoshtizmq.supabase.co/functions/v1/verify-email?token={{verification_token}}
+                </div>
+                <p>✅ <strong>No authentication headers required!</strong></p>
+                <p>✅ <strong>Will work directly from email links!</strong></p>
+            `, 'success');
+        }
+
+        window.onload = function() {
+            addResult('🎯 Function deployed as truly public with --no-verify-jwt flag. This is our final attempt!', 'success');
+            addResult('🔥 Click "TEST PUBLIC FUNCTION" to see if we finally succeeded!', 'info');
+        };
+    </script>
+</body>
+</html>

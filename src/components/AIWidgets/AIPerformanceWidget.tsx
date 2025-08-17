@@ -32,11 +32,14 @@ export const AIPerformanceWidget: React.FC<AIPerformanceWidgetProps> = ({
 
   useEffect(() => {
     if (userId) {
-      fetchPerformanceMetrics();
+      const loadMetrics = async () => {
+        await fetchPerformanceMetrics();
+      };
+      loadMetrics();
     }
   }, [userId, timeframe]);
 
-  const fetchPerformanceMetrics = async () => {
+  const fetchPerformanceMetrics = async (): Promise<void> => {
     try {
       setLoading(true);
       setError(null);

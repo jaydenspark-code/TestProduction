@@ -57,13 +57,27 @@ serve(async (req) => {
                 })
             }
 
-            // Update user payment status and add welcome bonus
+            // Get current user balance
+            const { data: currentUserData, error: fetchError } = await supabase
+                .from('users')
+                .select('balance, total_earned')
+                .eq('id', userId)
+                .single()
+
+            if (fetchError) {
+                console.error('Error fetching current user data:', fetchError)
+            }
+
+            const currentBalance = currentUserData?.balance || 0
+            const currentTotalEarned = currentUserData?.total_earned || 0
+
+            // Update user payment status and add ONLY welcome bonus (NOT the $15 payment)
             const { error: updateError } = await supabase
                 .from('users')
                 .update({
                     is_paid: true,
-                    balance: (user.balance || 0) + 3.00, // Add $3 welcome bonus
-                    total_earned: (user.total_earned || 0) + 3.00
+                    balance: currentBalance + 3.00, // Add $3 welcome bonus to existing balance  
+                    total_earned: currentTotalEarned + 3.00 // Add $3 to total earned
                 })
                 .eq('id', userId)
 
@@ -91,17 +105,18 @@ serve(async (req) => {
                 console.error('Error logging bonus transaction:', bonusError)
             }
 
-            // Log the payment transaction
+            // Log the activation payment transaction (separate from balance)
             const { error: paymentError } = await supabase
                 .from('transactions')
                 .insert({
                     user_id: userId,
-                    type: 'payment',
+                    type: 'activation_payment',
                     amount: 15.00,
-                    description: 'Account activation payment',
+                    description: 'Account activation fee payment',
                     reference: reference,
                     paystack_reference: reference,
-                    status: 'completed'
+                    status: 'completed',
+                    note: 'Activation fee - not added to user balance'
                 })
 
             if (paymentError) {

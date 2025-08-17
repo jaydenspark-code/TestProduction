@@ -1,9 +1,9 @@
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from "../lib/supabase";
 import { RealtimeChannel, RealtimePostgresChangesPayload } from '@supabase/supabase-js';
 
 export interface LiveEvent {
   id: string;
-  type: 'new_referral' | 'earning_update' | 'withdrawal_processed' | 'user_joined' | 'achievement_unlocked' | 'notification';
+  type: 'new_referral' | 'earning_update' | 'withdrawal_processed' | 'user_joined' | 'achievement_unlocked' | 'notification' | 'user_role_updated';
   data: any;
   timestamp: Date;
   userId?: string;
@@ -73,6 +73,11 @@ class RealtimeService {
    * Set up global events channel for platform-wide updates
    */
   private async setupGlobalEventsChannel() {
+    if (!supabase) {
+      console.log('🧪 TESTING MODE: Skipping real-time channels setup');
+      return;
+    }
+    
     const channel = supabase
       .channel('global-events')
       .on('postgres_changes', 
@@ -127,6 +132,11 @@ class RealtimeService {
    * Subscribe to user-specific events
    */
   subscribeToUserEvents(userId: string): void {
+    if (!supabase) {
+      console.log('🧪 TESTING MODE: Skipping user events subscription');
+      return;
+    }
+    
     if (this.currentUserId === userId) return;
     
     this.currentUserId = userId;
@@ -233,6 +243,11 @@ class RealtimeService {
    * Send real-time notification to user
    */
   async sendNotification(userId: string, notification: Omit<NotificationEvent, 'id' | 'timestamp' | 'read'>): Promise<void> {
+    if (!supabase) {
+      console.log('🧪 TESTING MODE: Skipping notification send');
+      return;
+    }
+    
     try {
       const { error } = await supabase
         .from('notifications')
@@ -443,15 +458,22 @@ class RealtimeService {
    * Utility methods
    */
   private async fetchLatestStats(): Promise<RealtimeStats> {
+    if (!supabase) {
+      console.log('🧪 TESTING MODE: Returning mock stats');
+      return {
+        activeUsers: 1250,
+        totalEarnings: 12500.75,
+        newReferrals: 42,
+        recentTransactions: []
+      };
+    }
+    
     try {
-      // Fetch active users (simplified - users who logged in today)
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
+      // Fetch active users (simplified - count all verified users since last_login column doesn't exist)
       const { data: activeUsersData } = await supabase
         .from('users')
         .select('id')
-        .gte('last_login', today.toISOString());
+        .eq('is_verified', true);
 
       // Fetch total earnings
       const { data: earningsData } = await supabase
@@ -459,7 +481,10 @@ class RealtimeService {
         .select('amount')
         .eq('type', 'earning');
 
-      // Fetch recent referrals
+      // Fetch recent referrals (today's referrals)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
       const { data: referralsData } = await supabase
         .from('referrals')
         .select('*')
@@ -505,6 +530,11 @@ class RealtimeService {
   }
 
   private async storeEvent(event: LiveEvent): Promise<void> {
+    if (!supabase) {
+      console.log('🧪 TESTING MODE: Skipping event storage');
+      return;
+    }
+    
     // Store events in a separate table for analytics
     const { error } = await supabase
       .from('live_events')

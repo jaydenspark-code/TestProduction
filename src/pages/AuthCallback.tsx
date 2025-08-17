@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from "../lib/supabase";
 import { useAuth } from '../context/AuthContext';
 
 const AuthCallback: React.FC = () => {
@@ -13,74 +13,90 @@ const AuthCallback: React.FC = () => {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        // Get the tokens from URL
-        const access_token = searchParams.get('access_token');
-        const refresh_token = searchParams.get('refresh_token');
-        const error_description = searchParams.get('error_description');
-
-        if (error_description) {
+        console.log('🔍 Processing OAuth callback...');
+        
+        // Get referral code from URL if present
+        const referralCode = searchParams.get('ref');
+        
+        // Handle OAuth flow
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('❌ OAuth callback error:', error);
           setStatus('error');
-          setMessage(`Authentication error: ${error_description}`);
+          setMessage(`Authentication failed: ${error.message}`);
           return;
         }
 
-        if (access_token && refresh_token) {
-          // Set the session
-          const { data, error } = await supabase.auth.setSession({
-            access_token,
-            refresh_token
-          });
+        if (data.session?.user) {
+          console.log('✅ OAuth user authenticated:', data.session.user.email);
+          
+          // Check if this user exists in our database
+          const { data: existingUser } = await supabase
+            .from('users')
+            .select('*')
+            .eq('email', data.session.user.email)
+            .single();
 
-          if (error) {
-            setStatus('error');
-            setMessage(`Session error: ${error.message}`);
-            return;
-          }
+          if (!existingUser) {
+            console.log('🆕 New user from OAuth, creating profile...');
+            
+            // Create new user profile for OAuth user
+            const userData = {
+              id: data.session.user.id,
+              email: data.session.user.email,
+              full_name: data.session.user.user_metadata?.full_name || data.session.user.user_metadata?.name || 'OAuth User',
+              username: data.session.user.email.split('@')[0] + '_' + Math.random().toString(36).substr(2, 5),
+              is_verified: true, // OAuth emails are already verified
+              is_paid_user: false, // Still needs to pay for activation
+              country: 'US', // Default, can be updated later
+              currency: 'USD',
+              role: 'user',
+              referred_by: referralCode || null,
+              created_at: new Date().toISOString()
+            };
 
-          if (data.user) {
-            // Update user verification status in the database
+            const { error: insertError } = await supabase
+              .from('users')
+              .insert([userData]);
+
+            if (insertError) {
+              console.error('❌ Error creating user profile:', insertError);
+            }
+          } else {
+            console.log('👤 Existing OAuth user, updating verification status...');
+            
+            // Update verification status for existing user
             await supabase
               .from('users')
               .update({ is_verified: true })
-              .eq('id', data.user.id);
-
-            // Refresh user data
-            await refreshUser();
-
-            setStatus('success');
-            setMessage('Email verified successfully! Redirecting...');
-
-            // Redirect to dashboard after 2 seconds
-            setTimeout(() => {
-              navigate('/dashboard');
-            }, 2000);
+              .eq('id', data.session.user.id);
           }
-        } else {
-          // Handle other auth flows
-          const { data, error } = await supabase.auth.getSession();
+
+          // Refresh user data in context
+          await refreshUser();
+
+          setStatus('success');
+          setMessage('Google authentication successful! Redirecting to payment...');
+          // Redirect to payment page
+          navigate('/payment', { 
+            state: { 
+              fromOAuth: true, 
+              email: data.session.user.email,
+              verified: true,
+              provider: 'google'
+            } 
+          });
           
-          if (error) {
-            setStatus('error');
-            setMessage(`Authentication failed: ${error.message}`);
-            return;
-          }
-
-          if (data.session?.user) {
-            await refreshUser();
-            setStatus('success');
-            setMessage('Authentication successful! Redirecting...');
-            setTimeout(() => {
-              navigate('/dashboard');
-            }, 2000);
-          } else {
-            setStatus('error');
-            setMessage('No valid session found. Please try logging in again.');
-          }
+        } else {
+          setStatus('error');
+          setMessage('No valid session found. Please try signing in again.');
         }
       } catch (error) {
-        console.error('Auth callback error:', error);
-        setStatus('error');
-        setMessage('An unexpected error occurred during authentication.');
+        console.error('❌ Auth callback error:', error);
+  setStatus('error');
+  setMessage('An unexpected error occurred during authentication. Please try again or contact support.');
+  // Optionally, log error to a monitoring service here
       }
     };
 

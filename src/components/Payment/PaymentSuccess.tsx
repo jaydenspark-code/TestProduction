@@ -3,7 +3,6 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { CheckCircle, Loader, Gift } from 'lucide-react';
-import { loadStripe } from '@stripe/stripe-js';
 
 const PaymentSuccess: React.FC = () => {
   const navigate = useNavigate();
@@ -18,7 +17,7 @@ const PaymentSuccess: React.FC = () => {
 
   useEffect(() => {
     const verifyPayment = async () => {
-      if (!reference && !paypalOrderId && !searchParams.get('payment_intent')) {
+      if (!reference && !paypalOrderId) {
         setError('No payment reference found');
         setVerifying(false);
         return;
@@ -42,7 +41,7 @@ const PaymentSuccess: React.FC = () => {
           });
         } else if (paypalOrderId) {
           // Verify PayPal payment
-          response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/paypal-capture-order`, {
+          response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/Paypal-capture-order`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -53,23 +52,10 @@ const PaymentSuccess: React.FC = () => {
               userId: user?.id
             })
           });
-        } else if (searchParams.get('payment_intent')) {
-          // Verify Stripe payment
-          const stripe = await loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
-          if (!stripe) {
-            throw new Error('Failed to load Stripe');
-          }
+        }
 
-          const clientSecret = searchParams.get('payment_intent_client_secret');
-          const { paymentIntent } = await stripe.retrievePaymentIntent(clientSecret);
-
-          if (paymentIntent.status !== 'succeeded') {
-            throw new Error('Payment was not successful');
-          }
-
-          await refreshUser();
-          setVerifying(false);
-          return;
+        if (!response) {
+          throw new Error('No payment method specified');
         }
 
         const result = await response.json();
@@ -77,6 +63,7 @@ const PaymentSuccess: React.FC = () => {
         if (result.success) {
           await refreshUser();
           setVerifying(false);
+          // Let the parent component handle navigation
         } else {
           setError(result.error || 'Payment verification failed');
           setVerifying(false);
@@ -155,12 +142,13 @@ const PaymentSuccess: React.FC = () => {
         </p>
         
         <div className="bg-white/5 rounded-lg p-4 mb-6">
-          <h3 className="text-white font-medium mb-2">What's Next?</h3>
+          <h3 className="text-white font-medium mb-2">Start Earning Now!</h3>
           <ul className="text-white/70 text-sm space-y-1 text-left">
-            <li>• Start sharing your referral link</li>
-            <li>• Complete daily tasks to earn more</li>
-            <li>• Apply for the Agent Program</li>
-            <li>• Explore advertising opportunities</li>
+            <li>• Join our Telegram & YouTube channels (+$0.50)</li>
+            <li>• Share your unique referral link & QR code</li>
+            <li>• Complete daily tasks (up to $1+ per day)</li>
+            <li>• Participate in ads ($0.02-$0.05 per ad)</li>
+            <li>• Earn from referrals when others join</li>
           </ul>
         </div>
         

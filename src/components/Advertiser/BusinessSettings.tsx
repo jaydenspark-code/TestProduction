@@ -57,9 +57,26 @@ const BusinessSettings = () => {
         </div>
         <div className="mt-6 border-t border-gray-700 pt-6">
             <h3 className="text-lg font-medium text-white mb-4">Notifications</h3>
-            <div className="flex items-center">
-                <input type="checkbox" id="notifications" name="notifications" checked={settings.notifications} onChange={handleInputChange} className="h-4 w-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500" />
-                <label htmlFor="notifications" className="ml-2 text-white">Receive email notifications for campaign updates</label>
+            <div className="space-y-4">
+                <div className="flex items-center">
+                    <input type="checkbox" id="notifications" name="notifications" checked={settings.notifications} onChange={handleInputChange} className="h-4 w-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500" />
+                    <label htmlFor="notifications" className="ml-2 text-white">Receive email notifications for campaign updates</label>
+                </div>
+                
+                <div className="flex items-center">
+                    <input type="checkbox" id="campaignStatusNotifications" name="campaignStatusNotifications" checked={settings.campaignStatusNotifications || true} onChange={handleInputChange} className="h-4 w-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500" />
+                    <label htmlFor="campaignStatusNotifications" className="ml-2 text-white">Real-time campaign status notifications</label>
+                </div>
+                
+                <div className="flex items-center">
+                    <input type="checkbox" id="performanceAlerts" name="performanceAlerts" checked={settings.performanceAlerts || true} onChange={handleInputChange} className="h-4 w-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500" />
+                    <label htmlFor="performanceAlerts" className="ml-2 text-white">Campaign performance alerts</label>
+                </div>
+                
+                <div className="flex items-center">
+                    <input type="checkbox" id="budgetAlerts" name="budgetAlerts" checked={settings.budgetAlerts || true} onChange={handleInputChange} className="h-4 w-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500" />
+                    <label htmlFor="budgetAlerts" className="ml-2 text-white">Budget threshold alerts (80% spent)</label>
+                </div>
             </div>
         </div>
         <div className="mt-8 text-right">

@@ -77,8 +77,8 @@ export const formatDualCurrency = (usdAmount: number, userCurrency: string): str
   const exchangeRate = FALLBACK_RATES[userCurrency] || 1;
   const localAmount = usdAmount * exchangeRate;
   
-  // Return USD as primary, local currency as secondary (smaller)
-  return `${formatCurrency(usdAmount, 'USD')} (${formatCurrency(localAmount, userCurrency)})`;
+  // Return USD as primary, local currency as secondary
+  return `${formatCurrency(usdAmount, 'USD')} ${formatCurrency(localAmount, userCurrency)}`;
 };
 
 // New component for dual currency display with proper styling
@@ -99,7 +99,7 @@ export const DualCurrencyDisplay: React.FC<{
     return (
       <span className={className}>
         <span className="text-lg font-bold">{formatCurrency(localAmount, userCurrency)}</span>
-        <span className="text-sm text-white/60 ml-2">({formatCurrency(usdAmount, 'USD')})</span>
+        <span className="text-sm text-white/60 ml-2">{formatCurrency(usdAmount, 'USD')}</span>
       </span>
     );
   }
@@ -107,7 +107,7 @@ export const DualCurrencyDisplay: React.FC<{
   return (
     <span className={className}>
       <span className="text-lg font-bold">{formatCurrency(usdAmount, 'USD')}</span>
-      <span className="text-sm text-white/60 ml-2">({formatCurrency(localAmount, userCurrency)})</span>
+      <span className="text-sm text-white/60 ml-2">{formatCurrency(localAmount, userCurrency)}</span>
     </span>
   );
 };

@@ -19,12 +19,6 @@ interface EnvironmentConfig {
     returnUrl: string;
     cancelUrl: string;
   };
-
-  stripe: {
-    publicKey: string;
-    secretKey: string;
-    webhookSecret: string;
-  };
   
   // Payment services
   paystack: {
@@ -48,6 +42,7 @@ interface EnvironmentConfig {
     version: string;
     url: string;
     apiBaseUrl: string;
+    environment: 'development' | 'production' | 'test';
   };
   
   // AI Features
@@ -201,14 +196,9 @@ export function createEnvironmentConfig(): EnvironmentConfig {
     paypal: {
       clientId: getEnvVar('VITE_PAYPAL_CLIENT_ID'),
       clientSecret: getEnvVar('VITE_PAYPAL_CLIENT_SECRET'),
-      mode: getEnvVar('VITE_PAYPAL_MODE', 'sandbox'), // or 'live'
+      mode: (getEnvVar('VITE_PAYPAL_MODE', 'sandbox') as 'sandbox' | 'live'),
       returnUrl: getEnvVar('VITE_PAYPAL_RETURN_URL'),
       cancelUrl: getEnvVar('VITE_PAYPAL_CANCEL_URL'),
-    },
-    stripe: {
-      publicKey: getEnvVar('VITE_STRIPE_PUBLIC_KEY'),
-      secretKey: getEnvVar('VITE_STRIPE_SECRET_KEY'),
-      webhookSecret: getEnvVar('VITE_STRIPE_WEBHOOK_SECRET'),
     },
     
     // Email services
@@ -225,6 +215,7 @@ export function createEnvironmentConfig(): EnvironmentConfig {
       version: getEnvVar('VITE_APP_VERSION', '1.0.0'),
       url: getEnvVar('VITE_APP_URL'),
       apiBaseUrl: getEnvVar('VITE_API_BASE_URL'),
+      environment: getEnvVar('VITE_APP_ENV', 'development') as 'development' | 'production' | 'test',
     },
     
     // AI Features
@@ -332,35 +323,62 @@ export function createEnvironmentConfig(): EnvironmentConfig {
 
 
 /**
- * Validate required environment variables
+ * Comprehensive environment validation with better error messages
  */
-// Add at the end of the file
-export const validateEnvironment = (): { isValid: boolean; errors: string[] } => {
+export const validateEnvironment = (): { isValid: boolean; errors: string[]; warnings: string[] } => {
   const errors: string[] = [];
+  const warnings: string[] = [];
   
-  // Critical validations
-  if (!envConfig.supabase.url) {
-    errors.push('VITE_SUPABASE_URL is required');
+  // Critical validations - will prevent app from working
+  if (!envConfig.supabase.url || envConfig.supabase.url === 'your_supabase_project_url_here') {
+    errors.push('VITE_SUPABASE_URL is required for database connection');
   }
   
-  if (!envConfig.supabase.anonKey) {
-    errors.push('VITE_SUPABASE_ANON_KEY is required');
+  if (!envConfig.supabase.anonKey || envConfig.supabase.anonKey === 'your_supabase_anon_key_here') {
+    errors.push('VITE_SUPABASE_ANON_KEY is required for database authentication');
+  }
+
+  // Payment gateway validations - required for functionality
+  if (!envConfig.paypal.clientId || envConfig.paypal.clientId === '') {
+    errors.push('VITE_PAYPAL_CLIENT_ID is required for PayPal payments');
+  }
+
+  if (!envConfig.paypal.clientSecret || envConfig.paypal.clientSecret === '') {
+    errors.push('VITE_PAYPAL_CLIENT_SECRET is required for PayPal payments');
+  }
+
+  // URL validations - important for proper redirects
+  if (!envConfig.paypal.returnUrl) {
+    warnings.push('VITE_PAYPAL_RETURN_URL should be set for proper payment flow');
+  }
+
+  if (!envConfig.paypal.cancelUrl) {
+    warnings.push('VITE_PAYPAL_CANCEL_URL should be set for proper payment flow');
+  }
+
+  if (!envConfig.app.url) {
+    warnings.push('VITE_APP_URL should be set for proper functionality');
   }
   
-  // Production validations
+  // Production-specific validations
   if (envConfig.app.environment === 'production') {
     if (!envConfig.paystack.publicKey) {
-      errors.push('VITE_PAYSTACK_PUBLIC_KEY is required in production');
+      warnings.push('VITE_PAYSTACK_PUBLIC_KEY recommended for production payments');
     }
     
-    if (!envConfig.sendgrid.apiKey) {
-      errors.push('VITE_SENDGRID_API_KEY is required in production');
+    if (!envConfig.sendgrid.apiKey || envConfig.sendgrid.apiKey === 'your_sendgrid_api_key_here') {
+      warnings.push('VITE_SENDGRID_API_KEY recommended for production email sending');
+    }
+
+    if (envConfig.development.debugMode) {
+      warnings.push('Debug mode should be disabled in production');
     }
   }
   
   return {
     isValid: errors.length === 0,
-    errors
+    errors,
+    warnings
   };
 };
 
@@ -418,71 +436,40 @@ export function isAIFeatureEnabled(featureName: keyof EnvironmentConfig['ai'], c
 // Create and export the global configuration
 export const envConfig = createEnvironmentConfig();
 
-// Validate configuration on initialization
-export const validateEnvironmentConfig = (config: EnvironmentConfig): { isValid: boolean; errors: string[]; warnings: string[] } => {
-  const errors: string[] = [];
-  const warnings: string[] = [];
-  
-  // Critical validations
-  if (!config.supabase.url) {
-    errors.push('VITE_SUPABASE_URL is required');
-  }
-  
-  if (!config.supabase.anonKey) {
-    errors.push('VITE_SUPABASE_ANON_KEY is required');
-  }
-
-  // PayPal validations
-  if (!config.paypal.clientId) {
-    errors.push('VITE_PAYPAL_CLIENT_ID is required');
-  }
-
-  if (!config.paypal.clientSecret) {
-    errors.push('VITE_PAYPAL_CLIENT_SECRET is required');
-  }
-
-  if (!config.paypal.returnUrl) {
-    warnings.push('VITE_PAYPAL_RETURN_URL is not set');
-  }
-
-  if (!config.paypal.cancelUrl) {
-    warnings.push('VITE_PAYPAL_CANCEL_URL is not set');
-  }
-
-  // Stripe validations
-  if (!config.stripe.publicKey) {
-    errors.push('VITE_STRIPE_PUBLIC_KEY is required');
-  }
-
-  if (!config.stripe.secretKey) {
-    errors.push('VITE_STRIPE_SECRET_KEY is required');
-  }
-
-  if (!config.stripe.webhookSecret) {
-    warnings.push('VITE_STRIPE_WEBHOOK_SECRET is not set');
-  }
-  
-  // Production validations
-  if (config.app.environment === 'production') {
-    if (!config.paystack.publicKey) {
-      warnings.push('VITE_PAYSTACK_PUBLIC_KEY recommended for production');
+// Debug: Log environment variables in development
+if (envConfig.development.debugMode && envConfig.development.enableConsoleLogs) {
+  console.group('🔧 Environment Variables Debug');
+  console.log('Raw env vars:', {
+    VITE_SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL,
+    VITE_SENDGRID_API_KEY: import.meta.env.VITE_SENDGRID_API_KEY ? 'SET' : 'NOT SET',
+    VITE_PAYPAL_CLIENT_ID: import.meta.env.VITE_PAYPAL_CLIENT_ID ? 'SET' : 'NOT SET',
+    VITE_PAYSTACK_PUBLIC_KEY: import.meta.env.VITE_PAYSTACK_PUBLIC_KEY ? 'SET' : 'NOT SET'
+  });
+  console.log('Processed config:', {
+    supabase: {
+      url: envConfig.supabase.url ? 'SET' : 'NOT SET',
+      anonKey: envConfig.supabase.anonKey ? 'SET' : 'NOT SET'
+    },
+    sendgrid: {
+      apiKey: envConfig.sendgrid.apiKey,
+      fromEmail: envConfig.sendgrid.fromEmail
+    },
+    paypal: {
+      clientId: envConfig.paypal.clientId
     }
-  }
-  
-  return {
-    isValid: errors.length === 0,
-    errors,
-    warnings
-  };
-};
-// Log status in development
+  });
+  console.groupEnd();
+}
+
+// Initialize and validate configuration on module load
 if (envConfig.development.enableConsoleLogs && envConfig.development.debugMode) {
   logEnvironmentStatus(envConfig);
   
-  const configValidation = validateEnvironmentConfig(envConfig);
+  const configValidation = validateEnvironment();
   
   if (!configValidation.isValid) {
     console.error('❌ Environment Configuration Errors:', configValidation.errors);
+    console.error('🔧 Please check your .env file and ensure all required variables are set.');
   }
   
   if (configValidation.warnings.length > 0) {

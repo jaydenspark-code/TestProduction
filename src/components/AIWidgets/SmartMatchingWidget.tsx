@@ -52,8 +52,7 @@ export const SmartMatchingWidget: React.FC<SmartMatchingWidgetProps> = ({
       const matchResults = await smartMatchingService.findOptimalMatches(userId, maxMatches);
       
       // Convert to expected format
-      const convertedMatches: MatchedUser[] = matchResults.map((match, index) => ({
-        id: match.targetUserId,
+      const convertedMatches: MatchedUser[] = matchResults.map((match, index) => ({        id: `match-${match.targetUserId}-${Date.now()}-${index}`,
         name: `User ${match.targetUserId.slice(0, 8)}`,
         bio: 'AI-matched user with high compatibility',
         compatibilityScore: match.compatibilityScore,
@@ -83,7 +82,7 @@ export const SmartMatchingWidget: React.FC<SmartMatchingWidgetProps> = ({
 
   const getMockMatches = (): MatchedUser[] => [
     {
-      id: '1',
+      id: `match-mock-1-${Date.now()}`,
       name: 'Sarah Chen',
       bio: 'Digital marketing specialist focused on e-commerce growth',
       compatibilityScore: 0.92,
@@ -95,7 +94,7 @@ export const SmartMatchingWidget: React.FC<SmartMatchingWidgetProps> = ({
       estimatedEarningsPotential: 150
     },
     {
-      id: '2',
+      id: `match-mock-2-${Date.now()}`,
       name: 'Alex Rodriguez',
       bio: 'Full-stack developer with experience in AI and automation',
       compatibilityScore: 0.87,
@@ -108,7 +107,7 @@ export const SmartMatchingWidget: React.FC<SmartMatchingWidgetProps> = ({
       estimatedEarningsPotential: 200
     },
     {
-      id: '3',
+      id: `match-mock-3-${Date.now()}`,
       name: 'Maya Patel',
       bio: 'Content creator and influencer with focus on lifestyle',
       compatibilityScore: 0.83,
@@ -120,7 +119,7 @@ export const SmartMatchingWidget: React.FC<SmartMatchingWidgetProps> = ({
       estimatedEarningsPotential: 120
     },
     {
-      id: '4',
+      id: `match-mock-4-${Date.now()}`,
       name: 'Jordan Kim',
       bio: 'Business consultant specializing in startup growth strategies',
       compatibilityScore: 0.79,
@@ -274,8 +273,8 @@ export const SmartMatchingWidget: React.FC<SmartMatchingWidgetProps> = ({
                   
                   {/* Common Interests */}
                   <div className="flex flex-wrap gap-1 mb-3">
-                    {match.commonInterests.slice(0, 3).map((interest, index) => (
-                      <span key={index} className="px-2 py-1 rounded-full text-xs bg-gray-500/20 text-gray-300">
+                    {match.commonInterests.slice(0, 3).map((interest) => (
+                      <span key={`${match.id}-${interest}`} className="px-2 py-1 rounded-full text-xs bg-gray-500/20 text-gray-300">
                         {interest}
                       </span>
                     ))}

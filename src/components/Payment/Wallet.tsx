@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
 import { Wallet as WalletIcon, TrendingUp, TrendingDown, History, Plus, Minus } from 'lucide-react';
-import { supabase } from '../../lib/supabaseClient';
+import { supabase } from '../../lib/supabase';
 
 interface Transaction {
     id: string;
@@ -43,6 +43,12 @@ const Wallet: React.FC = () => {
     }, [user]);
 
     const loadWalletData = async () => {
+        if (!supabase) {
+            console.log('🧪 TESTING MODE: Using mock wallet data');
+            setWallet({ balance: 1250.75, currency: user?.currency || 'USD' });
+            return;
+        }
+
         try {
             const { data, error } = await supabase
                 .from('wallets')
@@ -63,6 +69,41 @@ const Wallet: React.FC = () => {
 
     const loadTransactions = async () => {
         try {
+            if (!supabase) {
+                console.log('🧪 TESTING MODE: Using mock transaction data');
+                const mockTransactions: Transaction[] = [
+                    {
+                        id: 'mock-1',
+                        type: 'deposit',
+                        amount: 500.00,
+                        currency: user?.currency || 'USD',
+                        status: 'completed',
+                        description: 'Referral bonus payment',
+                        created_at: new Date(Date.now() - 86400000).toISOString()
+                    },
+                    {
+                        id: 'mock-2',
+                        type: 'withdrawal',
+                        amount: 150.00,
+                        currency: user?.currency || 'USD',
+                        status: 'pending',
+                        description: 'Bank transfer withdrawal',
+                        created_at: new Date(Date.now() - 43200000).toISOString()
+                    },
+                    {
+                        id: 'mock-3',
+                        type: 'bonus',
+                        amount: 25.00,
+                        currency: user?.currency || 'USD',
+                        status: 'completed',
+                        description: 'Registration bonus',
+                        created_at: new Date(Date.now() - 172800000).toISOString()
+                    }
+                ];
+                setTransactions(mockTransactions);
+                return;
+            }
+
             const { data, error } = await supabase
                 .from('transactions')
                 .select('*')

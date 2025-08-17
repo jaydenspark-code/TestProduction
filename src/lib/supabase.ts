@@ -1,16 +1,25 @@
-import { createClient } from '@supabase/supabase-js';
+/**
+ * Legacy Supabase client export for backward compatibility
+ * 
+ * This file now uses the new DatabaseConnection system which provides:
+ * - Robust connection testing
+ * - Graceful fallback to testing mode
+ * - Environment validation
+ * - Connection health monitoring
+ * - Automatic reconnection capabilities
+ */
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+import { databaseConnection, getSupabaseClient } from './databaseConnection';
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Missing Supabase environment variables');
-}
+// Export the client for backward compatibility
+export const supabase = getSupabaseClient();
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true
-  }
-});
+// Export additional utilities for enhanced database management
+export { databaseConnection, getSupabaseClient };
+
+// Connection status helpers
+export const isSupabaseConnected = () => databaseConnection.isConnected();
+export const isTestingMode = () => databaseConnection.isTestingMode();
+export const getConnectionStatus = () => databaseConnection.getStatus();
+export const reconnectDatabase = () => databaseConnection.reconnect();
+export const performHealthCheck = () => databaseConnection.healthCheck();

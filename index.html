@@ -7,11 +7,14 @@
     <meta name="theme-color" content="#8B5CF6" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <title>EarnPro - Multi-Country Referral Rewards Platform</title>
+    
+    <!-- Payment Gateway Libraries -->
     <script src="https://js.paystack.co/v1/inline.js"></script>
-    <script src="https://www.paypal.com/sdk/js?client-id=%VITE_PAYPAL_CLIENT_ID%&currency=USD"></script>
+    <script src="https://js.braintreegateway.com/web/dropin/1.33.0/js/dropin.min.js"></script>
+    <script src="https://www.paypal.com/sdk/js?client-id=AeNqpgsh9qaCHH4FDUQJy3-GVtmjSJqDlh0sSXTmUwDxyXhVCh7PiFtwew4CwGpcu3m-AR5N30V6FzGO&currency=USD"></script>
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="/src/main-restored.tsx"></script>
   </body>
 </html>

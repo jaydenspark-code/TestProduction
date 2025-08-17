@@ -18,7 +18,7 @@ import {
 import { DualCurrencyDisplay } from '../../utils/currency';
 import { paystackService } from '../../services/paystackService';
 import { emailService } from '../../services/emailService';
-import { supabase } from '../../lib/supabaseClient';
+import { supabase } from '../../lib/supabase';
 
 interface WithdrawalMethod {
     id: string;

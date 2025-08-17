@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { Users, TrendingUp, DollarSign, Gift, Copy, Share2, CheckCircle, BarChart3, QrCode, Calendar, Play, MessageCircle, Youtube, Wallet, Brain } from 'lucide-react';
+import { useRealtime } from '../../hooks/useRealtime';
+import { Users, TrendingUp, DollarSign, Gift, Copy, Share2, CheckCircle, QrCode, Calendar, Play, MessageCircle, Youtube, Wallet, Brain } from 'lucide-react';
 import { ReferralStats } from '../../types';
 import { DualCurrencyDisplay } from '../../utils/currency';
 import QRCodeGenerator from '../QRCode/QRCodeGenerator';
@@ -10,11 +11,26 @@ import { Link } from 'react-router-dom';
 import { PersonalizedInsightsWidget } from '../AIWidgets/PersonalizedInsightsWidget';
 import SmartMatchingWidget from '../AIWidgets/SmartMatchingWidget';
 import AIPerformanceWidget from '../AIWidgets/AIPerformanceWidget';
+import AdWidget from '../AIWidgets/AdWidget';
 import PersonalizedDashboardLayout from '../AIPersonalization/PersonalizedDashboardLayout';
+import EnhancedLeaderboardWidget from './EnhancedLeaderboardWidget';
+import EnhancedEarningsBreakdown from './EnhancedEarningsBreakdown';
+import { adDisplayService } from '../../services/adDisplayService';
+import AdvertisingDemo from '../Demo/AdvertisingDemo';
+import EnhancedReferralSystem from '../Referral/EnhancedReferralSystem';
+import SocialMediaOnboarding from './SocialMediaOnboarding';
+import { showToast } from '../../utils/toast';
 
 const UserDashboard: React.FC = () => {
-  const { user } = useAuth();
+  const { user, refreshUser } = useAuth();
   const { theme } = useTheme();
+  
+  // Listen for role update events
+  const { events } = useRealtime({
+    enableEvents: true,
+    eventTypes: ['user_role_updated', 'achievement_unlocked']
+  });
+  
   const [stats] = useState<ReferralStats>({
     directReferrals: 12,
     indirectReferrals: 34,
@@ -34,6 +50,235 @@ const UserDashboard: React.FC = () => {
   const [showQR, setShowQR] = useState(false);
   const [showTemplate, setShowTemplate] = useState(false);
   const [showWelcomeBonus, setShowWelcomeBonus] = useState(true);
+  const [showAdDemo, setShowAdDemo] = useState(false);
+  const [adEarnings] = useState(47.85); // Mock ad earnings
+
+  // Calculate total earnings including ads
+  const totalEarningsWithAds = stats.totalEarnings + adEarnings;
+
+  // Initialize advertising service
+  useEffect(() => {
+    const initializeAdvertising = async () => {
+      try {
+        // Mock campaigns - integrate with your existing campaign system
+        const mockCampaigns = [
+          {
+            id: 'earnpro-tech-1',
+            title: 'TechStart Pro - Premium Development Tools',
+            description: 'Boost your coding productivity with our advanced development suite. Sign up for a free trial and earn rewards!',
+            advertiser: {
+              id: 'techstart-inc',
+              name: 'TechStart Inc.',
+              logo: '/images/advertisers/techstart.png'
+            },
+            targeting: {
+              countries: ['United States', 'Canada', 'United Kingdom'],
+              ageRange: [22, 45] as [number, number],
+              interests: ['technology', 'programming', 'software'],
+              languages: ['en']
+            },
+            budget: {
+              total: 5000,
+              spent: 1250,
+              dailyLimit: 200
+            },
+            reward: {
+              type: 'per_completion' as const,
+              amount: 2.50
+            },
+            schedule: {
+              startDate: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+              endDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
+              timezone: 'UTC'
+            },
+            metrics: {
+              impressions: 15420,
+              clicks: 847,
+              conversions: 156,
+              engagement: 5.8
+            },
+            status: 'active' as const,
+            priority: 8,
+            category: 'Technology',
+            imageUrl: 'https://images.unsplash.com/photo-1518709268805-4e9042af2176?w=800&h=400&fit=crop',
+            callToAction: 'Start Free Trial',
+            requirements: [
+              'Complete signup process',
+              'Verify email address',
+              'Complete profile setup'
+            ],
+            estimatedDuration: 5
+          },
+          {
+            id: 'earnpro-fitness-1',
+            title: 'FitLife Premium - Transform Your Health',
+            description: 'Join thousands who achieved their fitness goals with personalized workout plans and nutrition guidance.',
+            advertiser: {
+              id: 'fitlife-premium',
+              name: 'FitLife Premium',
+              logo: '/images/advertisers/fitlife.png'
+            },
+            targeting: {
+              countries: ['United States', 'Canada'],
+              ageRange: [18, 55] as [number, number],
+              interests: ['fitness', 'health', 'wellness'],
+              languages: ['en']
+            },
+            budget: {
+              total: 3500,
+              spent: 890,
+              dailyLimit: 150
+            },
+            reward: {
+              type: 'per_click' as const,
+              amount: 0.75
+            },
+            schedule: {
+              startDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+              endDate: new Date(Date.now() + 21 * 24 * 60 * 60 * 1000),
+              timezone: 'UTC'
+            },
+            metrics: {
+              impressions: 9840,
+              clicks: 524,
+              conversions: 89,
+              engagement: 5.3
+            },
+            status: 'active' as const,
+            priority: 6,
+            category: 'Health & Fitness',
+            imageUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800&h=400&fit=crop',
+            callToAction: 'Join FitLife',
+            estimatedDuration: 3
+          },
+          {
+            id: 'earnpro-education-1',
+            title: 'SkillBoost Academy - Learn & Earn',
+            description: 'Master new skills with our online courses. Complete lessons and earn certificates while getting paid!',
+            advertiser: {
+              id: 'skillboost-academy',
+              name: 'SkillBoost Academy',
+              logo: '/images/advertisers/skillboost.png'
+            },
+            targeting: {
+              countries: ['United States', 'Canada', 'United Kingdom', 'Australia'],
+              ageRange: [18, 65] as [number, number],
+              interests: ['education', 'career', 'learning'],
+              languages: ['en']
+            },
+            budget: {
+              total: 4200,
+              spent: 1560,
+              dailyLimit: 180
+            },
+            reward: {
+              type: 'per_completion' as const,
+              amount: 1.50
+            },
+            schedule: {
+              startDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000),
+              endDate: new Date(Date.now() + 28 * 24 * 60 * 60 * 1000),
+              timezone: 'UTC'
+            },
+            metrics: {
+              impressions: 12360,
+              clicks: 672,
+              conversions: 134,
+              engagement: 6.2
+            },
+            status: 'active' as const,
+            priority: 7,
+            category: 'Education',
+            imageUrl: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&h=400&fit=crop',
+            callToAction: 'Start Learning',
+            requirements: [
+              'Create SkillBoost account',
+              'Complete welcome tutorial',
+              'Enroll in first course'
+            ],
+            estimatedDuration: 7
+          }
+        ];
+
+        await adDisplayService.initializeService(mockCampaigns);
+        console.log('🎯 Advertising service initialized with', mockCampaigns.length, 'campaigns');
+      } catch (error) {
+        console.error('Failed to initialize advertising service:', error);
+      }
+    };
+
+    initializeAdvertising();
+  }, []);
+
+  // Handle role update events
+  useEffect(() => {
+    console.log('🔍 UserDashboard: Checking for role update events...', {
+      eventsCount: events.length,
+      userId: user?.id,
+      events: events.map(e => ({ type: e.type, userId: e.data?.userId }))
+    });
+
+    const roleUpdateEvent = events.find(event => 
+      event.type === 'user_role_updated' && 
+      event.data?.userId === user?.id
+    );
+
+    if (roleUpdateEvent) {
+      console.log('✅ Role update event found!', roleUpdateEvent);
+      // Refresh user session to get updated role
+      refreshUser().then(({ success }) => {
+        if (success) {
+          console.log('✅ User session refreshed successfully');
+          showToast.success('🎉 Your account has been upgraded! New features are now available.');
+        } else {
+          console.error('❌ Failed to refresh user session');
+        }
+      });
+    }
+  }, [events, user?.id, refreshUser]);
+
+  // Periodic check for role updates (fallback mechanism)
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const checkForRoleUpdates = async () => {
+      try {
+        const result = await refreshUser();
+        if (result.success) {
+          console.log('🔄 Periodic user data refresh completed');
+        }
+      } catch (error) {
+        console.error('Error during periodic refresh:', error);
+      }
+    };
+
+    // Check every 10 seconds for role updates
+    const interval = setInterval(checkForRoleUpdates, 10000);
+
+    // Listen for testing mode agent approval events
+    const handleAgentApproval = (event: any) => {
+      const { userId, userEmail, newRole } = event.detail;
+      console.log('🎯 Received agent approval event:', { userId, userEmail, newRole });
+      
+      // Check if this event is for the current user
+      if (userEmail === user?.email || userId === user?.id) {
+        console.log('✅ This approval is for the current user! Refreshing...');
+        refreshUser().then(({ success }) => {
+          if (success) {
+            showToast.success('🎉 Congratulations! You are now an EarnPro Agent!');
+          }
+        });
+      }
+    };
+
+    // Add event listener for testing mode
+    window.addEventListener('agentApprovalUpdate', handleAgentApproval);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('agentApprovalUpdate', handleAgentApproval);
+    };
+  }, [user?.id, user?.email, refreshUser]);
 
   const referralLink = `https://earnpro.org/register?ref=${user?.referralCode}`;
 
@@ -41,18 +286,6 @@ const UserDashboard: React.FC = () => {
     navigator.clipboard.writeText(referralLink);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleShareLink = () => {
-    if (navigator.share) {
-      navigator.share({
-        title: 'Join EarnPro',
-        text: 'Start earning with the world\'s most trusted referral platform!',
-        url: referralLink
-      });
-    } else {
-      handleCopyLink();
-    }
   };
 
   const handleJoinTelegram = () => {
@@ -93,12 +326,46 @@ const UserDashboard: React.FC = () => {
     <div className={`${bgClass} py-8`}>
       <div className="container mx-auto px-4">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-white mb-2">Welcome back, {user?.fullName}!</h1>
-          <p className="text-white/70">Here's your performance overview</p>
+          <div className="flex justify-between items-start">
+            <div>
+              <h1 className="text-3xl font-bold text-white mb-2">Welcome back, {user?.fullName}!</h1>
+              <p className="text-white/70">Here's your performance overview</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowAdDemo(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-lg font-medium transition-all duration-200 shadow-md transform hover:scale-105"
+                title="Access our advertising platform"
+              >
+                <DollarSign className="w-4 h-4" />
+                <span>Ad Platform</span>
+              </button>
+              <button
+                onClick={() => {
+                  refreshUser().then(({ success }) => {
+                    if (success) {
+                      showToast.success('✅ Dashboard refreshed!');
+                    } else {
+                      showToast.error('❌ Failed to refresh dashboard');
+                    }
+                  });
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 border border-white/20 rounded-lg text-white text-sm transition-all duration-200"
+                title="Refresh your dashboard data"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                Refresh
+              </button>
+            </div>
+          </div>
+        </div>
+          
           {user?.role !== 'agent' && user?.role !== 'advertiser' && (
             <div className="mt-2">
               <Link
-                to="/advertiser/apply"
+                to="/advertise"
                 className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-green-500 to-teal-500 text-white rounded-lg hover:from-green-600 hover:to-teal-600 transition-all duration-200 text-sm font-medium"
               >
                 🤝 Advertise with Us
@@ -117,90 +384,11 @@ const UserDashboard: React.FC = () => {
           )}
         </div>
 
-    <PersonalizedDashboardLayout 
-      userId={user?.id || ''}
-      availableWidgets={[
-        {
-          id: 'welcome-bonus',
-          name: 'Welcome Bonus',
-          category: 'info',
-          priority: 10,
-          visible: showWelcomeBonus
-        },
-        {
-          id: 'quick-actions',
-          name: 'Quick Actions',
-          category: 'actions',
-          priority: 9,
-          visible: true
-        },
-        {
-          id: 'stats-grid',
-          name: 'Statistics Overview',
-          category: 'analytics',
-          priority: 8,
-          visible: true
-        },
-        {
-          id: 'referral-link',
-          name: 'Referral Link',
-          category: 'referral',
-          priority: 7,
-          visible: true
-        },
-        {
-          id: 'earnings-breakdown',
-          name: 'Earnings Breakdown',
-          category: 'analytics',
-          priority: 6,
-          visible: true
-        },
-        {
-          id: 'daily-tasks',
-          name: 'Daily Tasks',
-          category: 'tasks',
-          priority: 5,
-          visible: true
-        },
-        {
-          id: 'community-links',
-          name: 'Community Links',
-          category: 'social',
-          priority: 4,
-          visible: true
-        },
-        {
-          id: 'ai-insights',
-          name: 'AI Personalized Insights',
-          category: 'ai',
-          priority: 3,
-          visible: true
-        },
-        {
-          id: 'smart-matching',
-          name: 'Smart Matching',
-          category: 'ai',
-          priority: 2,
-          visible: true
-        },
-        {
-          id: 'ai-performance',
-          name: 'AI Performance',
-          category: 'ai',
-          priority: 1,
-          visible: true
-        },
-        {
-          id: 'recent-activity',
-          name: 'Recent Activity',
-          category: 'analytics',
-          priority: 0,
-          visible: true
-        }
-      ]}
-    >
-
+    <PersonalizedDashboardLayout>
       {/* Wrap the existing dashboard components as children */}
+
+          {/* Enhanced Leaderboard Widget */}
+          <EnhancedLeaderboardWidget className="mb-8" />
 
           {/* Welcome Bonus Message */}
           {showWelcomeBonus && (
@@ -231,6 +419,12 @@ const UserDashboard: React.FC = () => {
               </div>
             </div>
           )}
+
+          {/* Enhanced Referral System */}
+          <EnhancedReferralSystem />
+
+          {/* Social Media Onboarding */}
+          <SocialMediaOnboarding />
 
         {/* Quick Actions */}
         <div className={`${cardClass} mb-8`}>
@@ -294,20 +488,20 @@ const UserDashboard: React.FC = () => {
             <div className="flex items-center justify-between mb-4">
               <DollarSign className={`w-8 h-8 ${theme === 'professional' ? 'text-green-400' : 'text-green-300'}`} />
               <DualCurrencyDisplay
-                usdAmount={stats.totalEarnings}
+                usdAmount={totalEarningsWithAds}
                 userCurrency={user?.currency || 'USD'}
                 className="text-2xl font-bold text-white"
               />
             </div>
             <h3 className="text-white font-medium">Total Earnings</h3>
-            <p className="text-white/70 text-sm">Lifetime earnings</p>
+            <p className="text-white/70 text-sm">Lifetime earnings (referrals + ads)</p>
           </div>
 
           <div className={cardClass + " p-6"}>
             <div className="flex items-center justify-between mb-4">
               <Wallet className={`w-8 h-8 ${theme === 'professional' ? 'text-emerald-400' : 'text-emerald-300'}`} />
               <DualCurrencyDisplay
-                usdAmount={stats.totalEarnings - stats.pendingEarnings}
+                usdAmount={totalEarningsWithAds - stats.pendingEarnings}
                 userCurrency={user?.currency || 'USD'}
                 className="text-2xl font-bold text-white"
               />
@@ -374,88 +568,12 @@ const UserDashboard: React.FC = () => {
             </div>
           </div>
 
-          {/* Earnings Breakdown */}
-          <div className={cardClass}>
-            <h3 className="text-xl font-bold text-white mb-4 flex items-center">
-              <BarChart3 className="w-6 h-6 mr-2" />
-              Earnings Breakdown
-            </h3>
-            <div className="space-y-4">
-              <div className="flex justify-between items-center py-2">
-                <span className="text-white/70">Direct Referrals</span>
-                <DualCurrencyDisplay
-                  usdAmount={stats.totalEarnings - stats.level2Earnings - stats.level3Earnings - stats.taskEarnings}
-                  userCurrency={user?.currency || 'USD'}
-                  className="font-medium text-white"
-                />
-              </div>
-              <div className="flex justify-between items-center py-2">
-                <span className="text-white/70">Level 2 Earnings</span>
-                <DualCurrencyDisplay
-                  usdAmount={stats.level2Earnings}
-                  userCurrency={user?.currency || 'USD'}
-                  className="font-medium text-white"
-                />
-              </div>
-              <div className="flex justify-between items-center py-2">
-                <span className="text-white/70">Level 3 Earnings</span>
-                <DualCurrencyDisplay
-                  usdAmount={stats.level3Earnings}
-                  userCurrency={user?.currency || 'USD'}
-                  className="font-medium text-white"
-                />
-              </div>
-              <div className="flex justify-between items-center py-2">
-                <span className="text-white/70">Task Earnings</span>
-                <DualCurrencyDisplay
-                  usdAmount={stats.taskEarnings}
-                  userCurrency={user?.currency || 'USD'}
-                  className="font-medium text-white"
-                />
-              </div>
-              <div className="flex justify-between items-center py-2">
-                <span className="text-white/70">Welcome Bonus</span>
-                <DualCurrencyDisplay
-                  usdAmount={3.00}
-                  userCurrency={user?.currency || 'USD'}
-                  className="font-medium text-green-300"
-                />
-              </div>
-              <div className={`border-t ${theme === 'professional' ? 'border-gray-600/50' : 'border-white/20'} pt-3`}>
-                <div className="flex justify-between items-center">
-                  <span className="text-white font-medium">Total Earnings</span>
-                  <DualCurrencyDisplay
-                    usdAmount={stats.totalEarnings + 3.00}
-                    userCurrency={user?.currency || 'USD'}
-                    className={`${theme === 'professional' ? 'text-cyan-300' : 'text-purple-300'} font-bold text-lg`}
-                  />
-                </div>
-              </div>
-
-              {/* Weekly Stats */}
-              <div className={`${theme === 'professional' ? 'bg-gray-700/30' : 'bg-white/5'} rounded-lg p-3 mt-4`}>
-                <h4 className="text-white font-medium mb-2">This Week</h4>
-                <div className="space-y-1 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-white/70">New Referrals:</span>
-                    <span className="text-white">{stats.weeklyReferrals}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-white/70">Week Earnings:</span>
-                    <DualCurrencyDisplay
-                      usdAmount={stats.currentWeekEarnings}
-                      userCurrency={user?.currency || 'USD'}
-                      className="text-white"
-                    />
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-white/70">Withdrawal Frequency:</span>
-                    <span className="text-white capitalize">{stats.withdrawalFrequency} per week</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* Enhanced Earnings Breakdown */}
+          <EnhancedEarningsBreakdown 
+            userId={user?.id || ''} 
+            referralStats={stats}
+            adEarnings={adEarnings}
+          />
 
           {/* Today's Tasks */}
           <div className={cardClass}>
@@ -569,10 +687,7 @@ const UserDashboard: React.FC = () => {
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
             {/* Personalized Insights Widget */}
             {user?.id && (
-              <PersonalizedInsightsWidget 
-                userId={user.id} 
-                className="" 
-              />
+              <PersonalizedInsightsWidget />
             )}
             
             {/* Smart Matching Widget */}
@@ -591,6 +706,56 @@ const UserDashboard: React.FC = () => {
               <AIPerformanceWidget 
                 userId={user.id} 
                 className="" 
+              />
+            )}
+          </div>
+        </div>
+
+        {/* Advertising Platform - Earn More Money */}
+        <div className={`mt-8 ${cardClass}`}>
+          <div className="flex items-center space-x-3 mb-6">
+            <DollarSign className={`w-8 h-8 ${theme === 'professional' ? 'text-green-400' : 'text-green-400'}`} />
+            <h2 className="text-2xl font-bold text-white">Earn More Money</h2>
+          </div>
+          
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+            {/* Dashboard Native Ad Widget */}
+            {user?.id && (
+              <AdWidget
+                placement="dashboard-native"
+                userId={user.id}
+                userProfile={{
+                  id: user.id,
+                  location: 'United States',
+                  age: 28,
+                  interests: ['technology', 'gaming', 'fitness'],
+                  deviceType: 'desktop' as const,
+                  language: 'en',
+                  timezone: 'UTC'
+                }}
+                maxAds={1}
+                className=""
+              />
+            )}
+            
+            {/* Sidebar Ad Widget */}
+            {user?.id && (
+              <AdWidget
+                placement="sidebar-ad"
+                userId={user.id}
+                userProfile={{
+                  id: user.id,
+                  location: 'United States',
+                  age: 28,
+                  interests: ['technology', 'gaming', 'fitness'],
+                  deviceType: 'desktop' as const,
+                  language: 'en',
+                  timezone: 'UTC'
+                }}
+                maxAds={1}
+                autoRotate={true}
+                rotationInterval={30}
+                className=""
               />
             )}
           </div>
@@ -641,12 +806,11 @@ const UserDashboard: React.FC = () => {
             ))}
           </div>
         </div>
-    </PersonalizedDashboardLayout>
-      </div>
+      </PersonalizedDashboardLayout>
 
       {/* QR Code Modal */}
       {showQR && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4z-50">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className={`w-full max-w-md ${cardClass}`}>
             <div className="text-center">
               <h3 className="text-xl font-bold text-white mb-4">Your QR Code</h3>
@@ -663,8 +827,58 @@ const UserDashboard: React.FC = () => {
       )}
 
       {/* Referral Template Modal */}
-      {showTemplate && (
+      {showTemplate && user && (
         <ReferralTemplate user={{ referralCode: user.referralCode }} onClose={() => setShowTemplate(false)} />
+      )}
+
+      {/* Ad Platform Demo Modal */}
+      {showAdDemo && (
+        <div 
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowAdDemo(false);
+            }
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') {
+              setShowAdDemo(false);
+            }
+          }}
+          tabIndex={-1}
+        >
+          <div className="relative w-full max-w-4xl max-h-[85vh] bg-gradient-to-br from-gray-900 to-black rounded-xl border border-green-500/20 shadow-2xl overflow-hidden">
+            {/* Header with Close Button */}
+            <div className="sticky top-0 z-20 bg-gradient-to-r from-gray-900 to-black border-b border-green-500/20 px-6 py-3 flex items-center justify-between">
+              <div className="flex items-center">
+                <DollarSign className="w-5 h-5 mr-2 text-green-400" />
+                <h2 className="text-lg font-bold text-white">Advertising Platform Demo</h2>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className="text-xs text-white/50 hidden sm:block">Press ESC or click outside to close</span>
+                <button
+                  onClick={() => setShowAdDemo(false)}
+                  className="text-white/70 hover:text-white transition-colors bg-red-500/20 hover:bg-red-500/30 rounded-full p-1.5 flex items-center justify-center"
+                  title="Close Demo"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            
+            {/* Scrollable Content */}
+            <div className="overflow-y-auto max-h-[calc(85vh-60px)]" style={{
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#10b981 #374151'
+            }}>
+              <div className="p-4">
+                <AdvertisingDemo userId={user?.id || 'demo-user'} isModal={true} />
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

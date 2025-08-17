@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>CORRECTED Edge Function Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background-color: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .loading { background-color: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .url-box { background: #f8f9fa; padding: 15px; margin: 10px 0; border-radius: 5px; word-break: break-all; }
+        .wrong { background: #f8d7da; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .correct { background: #d4edda; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        button { padding: 10px 20px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>🎯 PROBLEM FOUND AND FIXED!</h1>
+    
+    <h2>The Issue:</h2>
+    <div class="wrong">
+        <strong>❌ WRONG URL (what we were using):</strong><br>
+        bmta<strong>g</strong>ilpuszwo<strong>s</strong>hl<strong>i</strong>zmq.supabase.co
+    </div>
+    
+    <div class="correct">
+        <strong>✅ CORRECT URL (from your .env file):</strong><br>
+        bmta<strong>q</strong>ilpuszwo<strong>s</strong>ht<strong>i</strong>zmq.supabase.co
+    </div>
+
+    <h2>Test the Corrected URL:</h2>
+    <div class="url-box">
+        <strong>Corrected Function URL:</strong><br>
+        <a href="https://bmtaqilpuszwoshtizmq.supabase.co/functions/v1/verify-email?token=test" target="_blank" id="correctedUrl">
+            https://bmtaqilpuszwoshtizmq.supabase.co/functions/v1/verify-email?token=test
+        </a>
+    </div>
+    
+    <button onclick="testCorrectedURL()">🚀 Test CORRECTED Function URL</button>
+    <button onclick="testWithFetch()">🔍 Test with Fetch API</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const CORRECT_URL = 'https://bmtaqilpuszwoshtizmq.supabase.co/functions/v1/verify-email?token=test';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJtdGFxaWxwdXN6d29zaHRpem1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwOTQwNjQsImV4cCI6MjA2ODY3MDA2NH0.QdtF2IFukonNWslwkUV1oQbpYBgdYhtekvjCywKR0vA';
+        
+        function addResult(message, type = 'loading') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}:</strong> ${message}`;
+            results.appendChild(div);
+        }
+
+        function testCorrectedURL() {
+            addResult('🔄 Opening CORRECTED function URL...', 'loading');
+            window.open(CORRECT_URL, '_blank');
+            addResult('✅ Corrected URL opened! This should now work properly.', 'success');
+        }
+
+        async function testWithFetch() {
+            addResult('🔄 Testing corrected URL with fetch API...', 'loading');
+            
+            try {
+                const response = await fetch(CORRECT_URL, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                addResult(`📡 Response Status: ${response.status} ${response.statusText}`, response.ok ? 'success' : 'error');
+                
+                const text = await response.text();
+                if (text.includes('Email Verified') || text.includes('Verification Failed')) {
+                    addResult('🎉 SUCCESS! Function is working with correct URL!', 'success');
+                } else if (response.status === 400 && text.includes('No verification token')) {
+                    addResult('✅ Function accessible! Got expected error for test token.', 'success');
+                } else {
+                    addResult(`📋 Response: ${text.substring(0, 200)}...`, 'loading');
+                }
+                
+            } catch (error) {
+                addResult(`❌ Error: ${error.message}`, 'error');
+            }
+        }
+
+        window.onload = function() {
+            addResult('🎯 TYPO DISCOVERED! The domain name had incorrect letters. Try the corrected URL now.', 'success');
+        };
+    </script>
+</body>
+</html>

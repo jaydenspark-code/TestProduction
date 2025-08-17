@@ -1,0 +1,18 @@
+The issue is on line 470 of Register.tsx:
+
+CURRENT (causing page refresh):
+<button
+  type="button"
+  disabled={loading}
+  onClick={async (e) => {
+    // complex manual onClick handler
+  }}
+
+SHOULD BE (proper form submission):
+<button
+  type="submit"
+  disabled={loading}
+  className="..."
+>
+
+This will make the button properly submit the form and call the handleSubmit function automatically.

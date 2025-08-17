@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Braintree Ultimate Test - Final Fix</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .log {
+            background: #1e1e1e;
+            color: #f0f0f0;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .test-button {
+            background: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        .test-button:hover {
+            background: #45a049;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏆 Braintree Ultimate Test - Final Fix</h1>
+        <p>This version uses a stable SDK version and comprehensive loading checks.</p>
+        
+        <button class="test-button" onclick="runUltimateTest()">🚀 Ultimate Test</button>
+        <button class="test-button" onclick="clearLog()">🧹 Clear Log</button>
+        
+        <div id="status" class="status info">
+            Ready for ultimate Braintree test...
+        </div>
+        
+        <div id="log" class="log">
+            Console output will appear here...
+        </div>
+        
+        <div id="braintree-container" style="margin-top: 20px;">
+            <!-- Braintree Drop-in will be created here -->
+        </div>
+    </div>
+
+    <script>
+        // Redirect console.log to our log div
+        const originalLog = console.log;
+        const originalError = console.error;
+        const logDiv = document.getElementById('log');
+        const statusDiv = document.getElementById('status');
+        
+        function addToLog(message, type = 'log') {
+            const timestamp = new Date().toISOString().substring(11, 19);
+            const color = type === 'error' ? '#ff6b6b' : type === 'success' ? '#4CAF50' : '#f0f0f0';
+            logDiv.innerHTML += `<div style="color: ${color}">[${timestamp}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            
+            // Update status
+            if (type === 'error') {
+                statusDiv.className = 'status error';
+                statusDiv.textContent = '❌ Error occurred - check log';
+            } else if (type === 'success') {
+                statusDiv.className = 'status success';
+                statusDiv.textContent = '✅ Test completed successfully';
+            } else {
+                statusDiv.className = 'status info';
+                statusDiv.textContent = '🔄 Test in progress...';
+            }
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToLog(args.join(' '));
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToLog(args.join(' '), 'error');
+        };
+        
+        function clearLog() {
+            logDiv.innerHTML = '';
+            statusDiv.className = 'status info';
+            statusDiv.textContent = 'Log cleared - ready for new test';
+        }
+        
+        async function runUltimateTest() {
+            clearLog();
+            console.log('🚀 Starting ULTIMATE Braintree Test...');
+            
+            try {
+                // Step 1: Get client token
+                const clientToken = await getBraintreeClientToken();
+                
+                // Step 2: Load SDK properly
+                await loadBraintreeSDKUltimate();
+                
+                // Step 3: Create Drop-in
+                await createDropinUltimate(clientToken);
+                
+                addToLog('✅ ULTIMATE TEST PASSED! Drop-in created successfully!', 'success');
+            } catch (error) {
+                console.error('Ultimate test failed:', error);
+                addToLog(`❌ Ultimate test failed: ${error.message}`, 'error');
+            }
+        }
+
+        // Real credentials from your Braintree dashboard
+        const BRAINTREE_CONFIG = {
+            merchantId: '2yhrvbtjszdbvxtt',
+            publicKey: 'sgfjmfv929kzffsr',
+            privateKey: '4edc8a7489369f8e7d5cb8c9a8066c17',
+            environment: 'sandbox'
+        };
+
+        function parseXmlResponse(xmlString) {
+            console.log('🔍 Parsing XML response...');
+            
+            try {
+                // Create a DOM parser
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(xmlString, 'text/xml');
+                
+                // Check for parse errors
+                const parseError = xmlDoc.querySelector('parsererror');
+                if (parseError) {
+                    throw new Error('XML Parse Error: ' + parseError.textContent);
+                }
+                
+                // Look for client-token element
+                const clientTokenElement = xmlDoc.querySelector('client-token');
+                if (clientTokenElement) {
+                    const token = clientTokenElement.textContent.trim();
+                    console.log('✅ Successfully extracted client token from XML');
+                    console.log('Token length:', token.length);
+                    return token;
+                }
+                
+                throw new Error('No client-token element found in XML response');
+                
+            } catch (error) {
+                console.error('❌ XML parsing failed:', error);
+                // Fallback: try to extract token with regex
+                console.log('🔄 Trying regex fallback...');
+                
+                const tokenMatch = xmlString.match(/<client-token[^>]*>([^<]+)<\/client-token>/i);
+                if (tokenMatch && tokenMatch[1]) {
+                    const token = tokenMatch[1].trim();
+                    console.log('✅ Found token with regex fallback');
+                    console.log('Token length:', token.length);
+                    return token;
+                }
+                
+                throw new Error('Failed to parse XML and extract client token');
+            }
+        }
+
+        async function getBraintreeClientToken() {
+            console.log('🎯 Step 1: Getting Braintree Client Token...');
+            
+            try {
+                // Create basic auth header
+                const credentials = btoa(`${BRAINTREE_CONFIG.publicKey}:${BRAINTREE_CONFIG.privateKey}`);
+                
+                // Create request body for client token (XML format)
+                const requestBody = `<?xml version="1.0" encoding="UTF-8"?>
+<client-token>
+</client-token>`;
+                
+                console.log('🌐 Making request to Braintree API...');
+                const apiUrl = `https://api.sandbox.braintreegateway.com/merchants/${BRAINTREE_CONFIG.merchantId}/client_token`;
+                
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Basic ${credentials}`,
+                        'Content-Type': 'application/xml',
+                        'Accept': 'application/xml',
+                        'Braintree-Version': '2019-01-01'
+                    },
+                    body: requestBody
+                });
+                
+                console.log('📡 Response Status:', response.status);
+                
+                const responseText = await response.text();
+                
+                if (!response.ok) {
+                    console.error('❌ API Error:', response.status, responseText);
+                    throw new Error(`Braintree API error: ${response.status} - ${responseText}`);
+                }
+                
+                // Parse XML response to extract client token
+                const clientToken = parseXmlResponse(responseText);
+                
+                if (clientToken && clientToken.length > 10) {
+                    console.log('✅ Client Token obtained successfully');
+                    console.log('Token Length:', clientToken.length);
+                    return clientToken;
+                } else {
+                    throw new Error('Invalid or empty client token extracted');
+                }
+                
+            } catch (error) {
+                console.error('❌ Failed to get client token:', error);
+                throw error;
+            }
+        }
+
+        async function loadBraintreeSDKUltimate() {
+            console.log('🎯 Step 2: Loading Braintree SDK with Ultimate Method...');
+            
+            // Clear any existing scripts
+            const existingScripts = document.querySelectorAll('script[src*="braintreegateway.com"]');
+            existingScripts.forEach(script => script.remove());
+            
+            // Clear window.braintree
+            if (window.braintree) {
+                delete window.braintree;
+            }
+            
+            console.log('📦 Loading Braintree SDK v3.85.4 (stable version)...');
+            
+            // Load client SDK first
+            await new Promise((resolve, reject) => {
+                const clientScript = document.createElement('script');
+                clientScript.src = 'https://js.braintreegateway.com/web/3.85.4/js/client.min.js';
+                clientScript.onload = () => {
+                    console.log('✅ Braintree client SDK loaded');
+                    console.log('window.braintree available:', !!window.braintree);
+                    if (window.braintree) {
+                        console.log('Braintree client methods:', Object.keys(window.braintree));
+                    }
+                    resolve();
+                };
+                clientScript.onerror = (error) => {
+                    console.error('❌ Failed to load client SDK:', error);
+                    reject(new Error('Failed to load Braintree client SDK'));
+                };
+                document.head.appendChild(clientScript);
+            });
+            
+            // Wait a moment for client to initialize
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // Load dropin SDK
+            await new Promise((resolve, reject) => {
+                const dropinScript = document.createElement('script');
+                dropinScript.src = 'https://js.braintreegateway.com/web/3.85.4/js/dropin.min.js';
+                dropinScript.onload = () => {
+                    console.log('✅ Braintree dropin SDK loaded');
+                    console.log('window.braintree available:', !!window.braintree);
+                    if (window.braintree) {
+                        console.log('Braintree methods after dropin:', Object.keys(window.braintree));
+                        console.log('braintree.dropin available:', !!window.braintree.dropin);
+                        if (window.braintree.dropin) {
+                            console.log('dropin methods:', Object.keys(window.braintree.dropin));
+                        }
+                    }
+                    resolve();
+                };
+                dropinScript.onerror = (error) => {
+                    console.error('❌ Failed to load dropin SDK:', error);
+                    reject(new Error('Failed to load Braintree dropin SDK'));
+                };
+                document.head.appendChild(dropinScript);
+            });
+            
+            // Final verification
+            if (!window.braintree) {
+                throw new Error('Braintree SDK not available after loading');
+            }
+            
+            if (!window.braintree.dropin) {
+                throw new Error('Braintree dropin not available after loading');
+            }
+            
+            if (!window.braintree.dropin.create) {
+                throw new Error('Braintree dropin.create method not available');
+            }
+            
+            console.log('✅ Braintree SDK Ultimate loading complete');
+            console.log('Final verification: braintree.dropin.create is', typeof window.braintree.dropin.create);
+        }
+
+        async function createDropinUltimate(clientToken) {
+            console.log('🎯 Step 3: Creating Braintree Drop-in Ultimate...');
+            
+            try {
+                console.log('🔧 Verifying prerequisites...');
+                console.log('Client token length:', clientToken.length);
+                console.log('braintree object:', !!window.braintree);
+                console.log('braintree.dropin:', !!window.braintree.dropin);
+                console.log('braintree.dropin.create:', typeof window.braintree.dropin.create);
+                
+                // Clear previous container
+                const container = document.getElementById('braintree-container');
+                container.innerHTML = '<h3>🏆 Braintree Drop-in Ultimate Test</h3>';
+                
+                const dropinDiv = document.createElement('div');
+                dropinDiv.id = 'dropin-container-ultimate';
+                dropinDiv.style.padding = '20px';
+                dropinDiv.style.border = '3px solid #4CAF50';
+                dropinDiv.style.borderRadius = '8px';
+                dropinDiv.style.backgroundColor = '#f9f9f9';
+                dropinDiv.style.minHeight = '300px';
+                container.appendChild(dropinDiv);
+                
+                console.log('🔧 Creating Drop-in with simplified config...');
+                
+                // Start with minimal configuration
+                const dropinConfig = {
+                    authorization: clientToken,
+                    container: '#dropin-container-ultimate'
+                };
+                
+                console.log('Drop-in config:', dropinConfig);
+                console.log('🔧 Calling braintree.dropin.create...');
+                
+                const dropinInstance = await window.braintree.dropin.create(dropinConfig);
+                
+                console.log('✅ ULTIMATE SUCCESS! Drop-in created successfully!');
+                console.log('Drop-in instance:', dropinInstance);
+                console.log('Drop-in instance type:', typeof dropinInstance);
+                console.log('Drop-in methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(dropinInstance)));
+                
+                // Add ultimate success message
+                const successMsg = document.createElement('div');
+                successMsg.innerHTML = `
+                    <div style="background: linear-gradient(135deg, #4CAF50, #45a049); color: white; padding: 20px; margin: 10px 0; border-radius: 8px; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
+                        🏆 <strong>ULTIMATE SUCCESS!</strong> 🏆<br>
+                        Braintree Drop-in created successfully with ALL fixes applied!<br>
+                        <br>
+                        ✅ Credentials: WORKING<br>
+                        ✅ API Call: WORKING<br>
+                        ✅ XML Parsing: WORKING<br>
+                        ✅ SDK Loading: WORKING<br>
+                        ✅ Drop-in Creation: WORKING<br>
+                        <br>
+                        <small><strong>Token Length:</strong> ${clientToken.length} characters</small><br>
+                        <small><strong>SDK Version:</strong> 3.85.4 (stable)</small>
+                    </div>
+                `;
+                container.appendChild(successMsg);
+                
+                // Test payment method request
+                console.log('🧪 Testing payment method request...');
+                
+                const testButton = document.createElement('button');
+                testButton.textContent = '🧪 Test Payment Method';
+                testButton.style.cssText = 'background: #2196F3; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; margin: 10px;';
+                testButton.onclick = async () => {
+                    try {
+                        console.log('🧪 Requesting payment method...');
+                        const payload = await dropinInstance.requestPaymentMethod();
+                        console.log('✅ Payment method obtained:', payload);
+                        alert('✅ Payment method test successful! Check console for details.');
+                    } catch (error) {
+                        console.error('❌ Payment method test failed:', error);
+                        alert('❌ Payment method test failed: ' + error.message);
+                    }
+                };
+                
+                container.appendChild(testButton);
+                
+                return dropinInstance;
+                
+            } catch (error) {
+                console.error('❌ Drop-in Creation Failed:', error);
+                console.error('Error name:', error.name);
+                console.error('Error message:', error.message);
+                console.error('Error stack:', error.stack);
+                
+                // Add detailed error message
+                const container = document.getElementById('braintree-container');
+                const errorMsg = document.createElement('div');
+                errorMsg.innerHTML = `
+                    <div style="background: #f44336; color: white; padding: 15px; margin: 10px 0; border-radius: 4px;">
+                        ❌ <strong>ULTIMATE DROP-IN CREATION FAILED:</strong><br>
+                        <strong>Error:</strong> ${error.message}<br>
+                        <strong>Type:</strong> ${error.name}<br>
+                        <small>Check the console log above for detailed error information.</small>
+                    </div>
+                `;
+                container.appendChild(errorMsg);
+                
+                throw error;
+            }
+        }
+
+        // Initial message
+        console.log('🏆 Braintree ULTIMATE Test Page Loaded');
+        console.log('This version uses a stable SDK and comprehensive verification');
+        console.log('Click "Ultimate Test" button to run the complete test');
+    </script>
+</body>
+</html>

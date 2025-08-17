@@ -1,0 +1,29 @@
+/* Development CSS Override for Braintree Security Warnings */
+
+/* Custom CSS to style around security warnings */
+.braintree-container {
+  position: relative;
+}
+
+.braintree-container::after {
+  content: "🔒 Development Mode: Security warnings are normal and will not appear in production with HTTPS";
+  position: absolute;
+  bottom: -30px;
+  left: 0;
+  right: 0;
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  text-align: center;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+/* Style the Braintree container to look more polished */
+.braintree-drop-in-container {
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}

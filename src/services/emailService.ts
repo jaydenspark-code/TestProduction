@@ -3,20 +3,34 @@ class EmailService {
     private fromEmail = import.meta.env.VITE_SENDGRID_FROM_EMAIL || 'noreply@earnpro.org';
     private baseUrl = 'https://api.sendgrid.com/v3';
 
-    constructor() {
-        if (!this.apiKey) {
-            console.error('SendGrid API key is not configured');
+    private isConfigured(): boolean {
+        // More thorough configuration check
+        const hasApiKey = !!this.apiKey;
+        const isValidKey = this.apiKey && this.apiKey !== 'your_sendgrid_api_key_here' && this.apiKey.startsWith('SG.');
+        const hasFromEmail = !!this.fromEmail;
+        const isConfigured = hasApiKey && isValidKey && hasFromEmail;
+        
+        console.log('🔍 SendGrid Configuration Check:', {
+            hasApiKey,
+            apiKeyLength: this.apiKey?.length || 0,
+            startsWithSG: this.apiKey?.startsWith('SG.') || false,
+            hasFromEmail,
+            fromEmail: this.fromEmail,
+            isConfigured
+        });
+        
+        if (!isConfigured) {
+            console.warn('⚠️ SendGrid Configuration Issues:', {
+                apiKey: hasApiKey ? 'Present' : 'Missing',
+                validKey: isValidKey ? 'Valid' : 'Invalid',
+                fromEmail: hasFromEmail ? 'Present' : 'Missing'
+            });
         }
-        if (!this.fromEmail) {
-            console.error('SendGrid from email is not configured');
-        }
+        
+        return !!isConfigured;
     }
 
-    private makeRequest = async (endpoint: string, options: RequestInit = {}) => {
-        if (!this.apiKey) {
-            throw new Error('SendGrid API key is not configured');
-        }
-
+    private async makeRequest(endpoint: string, options: RequestInit = {}) {
         const url = `${this.baseUrl}${endpoint}`;
 
         const headers = {
@@ -25,34 +39,17 @@ class EmailService {
             ...options.headers,
         };
 
-        try {
-            const response = await fetch(url, {
-                ...options,
-                headers,
-            });
+        const response = await fetch(url, {
+            ...options,
+            headers,
+        });
 
-            const responseText = await response.text();
-            let responseData;
-            try {
-                responseData = JSON.parse(responseText);
-            } catch (e) {
-                responseData = responseText;
-            }
-
-            if (!response.ok) {
-                console.error('SendGrid API error:', {
-                    status: response.status,
-                    statusText: response.statusText,
-                    response: responseData
-                });
-                throw new Error(`SendGrid API error: ${response.status} ${response.statusText} - ${typeof responseData === 'string' ? responseData : JSON.stringify(responseData)}`);
-            }
-
-            return responseData;
-        } catch (error) {
-            console.error('SendGrid request failed:', error);
-            throw error;
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`SendGrid API error: ${response.status} ${response.statusText} - ${errorText}`);
         }
+
+        return response.json();
     }
 
     // Send email
@@ -68,6 +65,12 @@ class EmailService {
             contentType: string;
         }>;
     }) {
+        // Check if SendGrid is configured
+        if (!this.isConfigured()) {
+            console.warn('⚠️ SendGrid not configured, email sending skipped');
+            console.log('📧 Would send email to:', data.to, 'Subject:', data.subject);
+            return Promise.resolve({ message: 'Email sending skipped - SendGrid not configured' });
+        }
         const payload = {
             personalizations: [
                 {
@@ -516,6 +519,111 @@ class EmailService {
             html,
         });
     }
+
+    // Send email verification using SendGrid directly with 6-character code
+    async sendEmailVerificationCode(user: {
+        email: string;
+        fullName: string;
+        verificationCode: string;
+    }) {
+        console.log('📧 Sending verification code directly via SendGrid to:', user.email);
+        
+        if (!this.isConfigured()) {
+            console.error('❌ SendGrid not configured properly');
+            return { success: false, error: 'Email service not configured' };
+        }
+        
+        try {
+            const emailData = {
+                personalizations: [
+                    {
+                        to: [{ email: user.email, name: user.fullName }],
+                        subject: 'Verify Your EarnPro Account - Verification Code',
+                    },
+                ],
+                from: { email: this.fromEmail, name: 'EarnPro' },
+                content: [
+                    {
+                        type: 'text/html',
+                        value: `
+                        <!DOCTYPE html>
+                        <html>
+                        <head>
+                            <meta charset="utf-8">
+                            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                            <title>Verify Your EarnPro Account</title>
+                        </head>
+                        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+                            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; border-radius: 10px; text-align: center; margin-bottom: 30px;">
+                                <h1 style="color: white; margin: 0; font-size: 28px;">Welcome to EarnPro!</h1>
+                                <p style="color: white; margin: 10px 0 0 0; font-size: 16px;">Multi-Level Referral Rewards Platform</p>
+                            </div>
+                            
+                            <div style="background: #f8f9fa; padding: 30px; border-radius: 8px; margin-bottom: 30px;">
+                                <h2 style="color: #333; margin-top: 0;">Hello ${user.fullName}!</h2>
+                                <p style="font-size: 16px; margin-bottom: 20px;">
+                                    Thank you for joining EarnPro! To complete your registration and activate your account, please use the verification code below:
+                                </p>
+                                
+                                <div style="background: white; border: 2px dashed #667eea; padding: 20px; text-align: center; margin: 25px 0; border-radius: 8px;">
+                                    <p style="margin: 0 0 10px 0; font-size: 14px; color: #666;">Your Verification Code:</p>
+                                    <h2 style="color: #667eea; font-size: 32px; font-weight: bold; letter-spacing: 3px; margin: 0; font-family: 'Courier New', monospace;">
+                                        ${user.verificationCode}
+                                    </h2>
+                                    <p style="margin: 10px 0 0 0; font-size: 12px; color: #888;">Code expires in 15 minutes</p>
+                                </div>
+                                
+                                <div style="background: #e3f2fd; border-left: 4px solid #2196f3; padding: 15px; margin: 20px 0;">
+                                    <p style="margin: 0; font-size: 14px;">
+                                        <strong>Instructions:</strong><br>
+                                        1. Return to the EarnPro registration page<br>
+                                        2. Enter the 6-character code above<br>
+                                        3. Complete your account setup and payment
+                                    </p>
+                                </div>
+                                
+                                <p style="font-size: 14px; color: #666;">
+                                    Once verified, you'll gain access to:
+                                </p>
+                                <ul style="color: #666; font-size: 14px;">
+                                    <li>Multi-level referral earnings</li>
+                                    <li>$3.00 instant welcome bonus</li>
+                                    <li>Daily earning tasks</li>
+                                    <li>24/7 support and guidance</li>
+                                </ul>
+                            </div>
+                            
+                            <div style="text-align: center; padding: 20px; border-top: 1px solid #eee;">
+                                <p style="margin: 0; font-size: 12px; color: #888;">
+                                    If you didn't request this verification, please ignore this email.<br>
+                                    This code will expire in 15 minutes for security purposes.
+                                </p>
+                            </div>
+                        </body>
+                        </html>
+                        `
+                    }
+                ],
+            };
+
+            const response = await this.makeRequest('/mail/send', {
+                method: 'POST',
+                body: JSON.stringify(emailData),
+            });
+
+            if (response.ok) {
+                console.log('✅ Verification email sent successfully via SendGrid');
+                return { success: true };
+            } else {
+                const errorText = await response.text();
+                console.error('❌ SendGrid API error:', response.status, errorText);
+                return { success: false, error: `SendGrid error: ${response.status}` };
+            }
+        } catch (error: any) {
+            console.error('❌ Error sending verification email:', error);
+            return { success: false, error: `Email send failed: ${error?.message || 'Unknown error'}` };
+        }
+    }
 }
 
-export const emailService = new EmailService();
+export const emailService = new EmailService(); 

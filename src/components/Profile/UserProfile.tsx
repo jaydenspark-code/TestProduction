@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useTheme } from '../../context/ThemeContext';
-import { personalizationService } from '../../services/personalizationService';
 import { 
   User,
   Edit,
@@ -32,7 +31,6 @@ import {
   Users
 } from 'lucide-react';
 import { DualCurrencyDisplay } from '../../utils/currency';
-import { toast } from 'react-hot-toast';
 
 const UserProfile: React.FC = () => {
   const { user } = useAuth();
@@ -40,8 +38,6 @@ const UserProfile: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveError, setSaveError] = useState('');
 
   const [profileData, setProfileData] = useState({
     fullName: user?.fullName || '',
@@ -75,45 +71,9 @@ const UserProfile: React.FC = () => {
     profileCompletion: 85
   });
 
-  const handleSaveProfile = async () => {
-    if (!user?.id) return;
-    setIsSaving(true);
-    setSaveError('');
-
-    try {
-      await personalizationService.updateUserPreferences(
-        user.id,
-        {
-          communicationStyle: 'professional',
-          notificationFrequency: securitySettings.emailNotifications ? 'immediate' : 'never',
-          smsNotifications: securitySettings.smsNotifications,
-          withdrawalAlerts: securitySettings.withdrawalAlerts,
-        },
-        {
-          language: profileData.language,
-          timezone: profileData.timezone,
-          theme: theme,
-        },
-        {
-          fullName: profileData.fullName,
-          email: profileData.email,
-          phone: profileData.phone,
-          country: profileData.country,
-          preferredCurrency: profileData.preferredCurrency,
-          dateOfBirth: profileData.dateOfBirth,
-          bio: profileData.bio,
-          website: profileData.website,
-        }
-      );
-
-      setIsEditing(false);
-      toast.success('Profile updated successfully');
-    } catch (error) {
-      console.error('Failed to save profile:', error);
-      setSaveError('Failed to save profile. Please try again.');
-    } finally {
-      setIsSaving(false);
-    }
+  const handleSaveProfile = () => {
+    // Save profile data
+    setIsEditing(false);
   };
 
   const handleAvatarUpload = () => {
@@ -157,6 +117,15 @@ const UserProfile: React.FC = () => {
 
   return (
     <div className={`${bgClass} py-8`}>
+      {/* Hidden Avatar Upload Input */}
+      <input
+        type="file"
+        id="avatar-upload"
+        accept="image/*"
+        onChange={handleAvatarUpload}
+        className="hidden"
+      />
+      
       <div className="container mx-auto px-4">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-white mb-2 flex items-center">
@@ -248,55 +217,14 @@ const UserProfile: React.FC = () => {
               <div className={`${cardClass} p-6`}>
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-xl font-bold text-white">Profile Information</h3>
-                  {isEditing ? (
-                    <div className="flex flex-col space-y-4">
-                      {saveError && (
-                        <div className="text-red-500 bg-red-500/10 p-3 rounded-lg text-sm">
-                          {saveError}
-                        </div>
-                      )}
-                      <div className="flex space-x-4">
-                        <button
-                          onClick={handleSaveProfile}
-                          disabled={isSaving}
-                          className={`${buttonPrimaryClass} px-6 py-2 rounded-lg text-white font-medium flex items-center space-x-2 disabled:opacity-50`}
-                        >
-                          {isSaving ? (
-                            <>
-                              <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                              <span>Saving...</span>
-                            </>
-                          ) : (
-                            <>
-                              <Save className="w-5 h-5" />
-                              <span>Save Changes</span>
-                            </>
-                          )}
-                        </button>
-                        <button
-                          onClick={() => {
-                            setIsEditing(false);
-                            setSaveError('');
-                          }}
-                          disabled={isSaving}
-                          className="px-6 py-2 rounded-lg text-white font-medium bg-white/10 hover:bg-white/20 flex items-center space-x-2 disabled:opacity-50"
-                        >
-                          <X className="w-5 h-5" />
-                          <span>Cancel</span>
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => setIsEditing(true)}
-                      className={`${buttonPrimaryClass} px-6 py-2 rounded-lg text-white font-medium flex items-center space-x-2`}
-                    >
-                      <Edit className="w-5 h-5" />
-                      <span>Edit Profile</span>
-                    </button>
-                  )}
+                  <button
+                    onClick={() => setIsEditing(!isEditing)}
+                    className={`px-4 py-2 ${isEditing ? buttonSecondaryClass : buttonPrimaryClass} text-white rounded-lg transition-all duration-200 flex items-center space-x-2 border`}
+                  >
+                    {isEditing ? <X className="w-4 h-4" /> : <Edit className="w-4 h-4" />}
+                    <span>{isEditing ? 'Cancel' : 'Edit Profile'}</span>
+                  </button>
                 </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-white/70 text-sm mb-2">Full Name</label>

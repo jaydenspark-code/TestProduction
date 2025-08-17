@@ -4,7 +4,7 @@
  */
 
 import * as tf from '@tensorflow/tfjs';
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from "../lib/supabase";
 import { envConfig } from '../config/environment';
 import { aiAnalyticsService } from './aiAnalyticsService';
 import { smartMatchingService } from './smartMatchingService';

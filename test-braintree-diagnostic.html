@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Braintree Deep Diagnostic Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .log {
+            background: #1e1e1e;
+            color: #f0f0f0;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 11px;
+            max-height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .test-button {
+            background: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        .test-button:hover {
+            background: #45a049;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Braintree Deep Diagnostic Test</h1>
+        <p>This version provides comprehensive diagnostics for SDK loading issues.</p>
+        
+        <button class="test-button" onclick="runDiagnosticTest()">🔍 Run Deep Diagnostic</button>
+        <button class="test-button" onclick="testDirectCDN()">📦 Test Direct CDN</button>
+        <button class="test-button" onclick="clearLog()">🧹 Clear Log</button>
+        
+        <div id="status" class="status info">
+            Ready for deep diagnostic test...
+        </div>
+        
+        <div id="log" class="log">Console output will appear here...</div>
+        
+        <div id="braintree-container" style="margin-top: 20px;">
+            <!-- Braintree Drop-in will be created here -->
+        </div>
+    </div>
+
+    <script>
+        // Enhanced logging system
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        const logDiv = document.getElementById('log');
+        const statusDiv = document.getElementById('status');
+        
+        function addToLog(message, type = 'log') {
+            const timestamp = new Date().toISOString().substring(11, 23);
+            let color = '#f0f0f0';
+            let prefix = 'INFO';
+            
+            switch(type) {
+                case 'error': color = '#ff6b6b'; prefix = 'ERROR'; break;
+                case 'success': color = '#4CAF50'; prefix = 'SUCCESS'; break;
+                case 'warning': color = '#ffeb3b'; prefix = 'WARNING'; break;
+                case 'debug': color = '#81C784'; prefix = 'DEBUG'; break;
+            }
+            
+            logDiv.innerHTML += `<div style="color: ${color}">[${timestamp}] ${prefix}: ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            
+            // Update status
+            if (type === 'error') {
+                statusDiv.className = 'status error';
+                statusDiv.textContent = '❌ Error occurred - check log';
+            } else if (type === 'success') {
+                statusDiv.className = 'status success';
+                statusDiv.textContent = '✅ Test completed successfully';
+            } else if (type === 'warning') {
+                statusDiv.className = 'status warning';
+                statusDiv.textContent = '⚠️ Warning detected - check log';
+            } else {
+                statusDiv.className = 'status info';
+                statusDiv.textContent = '🔄 Test in progress...';
+            }
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToLog(args.join(' '));
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToLog(args.join(' '), 'error');
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addToLog(args.join(' '), 'warning');
+        };
+        
+        function debugLog(message) {
+            addToLog(message, 'debug');
+        }
+        
+        function clearLog() {
+            logDiv.innerHTML = '';
+            statusDiv.className = 'status info';
+            statusDiv.textContent = 'Log cleared - ready for new test';
+        }
+        
+        // Global error handler
+        window.addEventListener('error', (event) => {
+            console.error('Global Error:', {
+                message: event.message,
+                filename: event.filename,
+                lineno: event.lineno,
+                colno: event.colno,
+                error: event.error
+            });
+        });
+        
+        // Track script loading
+        const scriptLoadTracker = {
+            loaded: [],
+            failed: [],
+            track: function(src, success, error) {
+                if (success) {
+                    this.loaded.push(src);
+                    debugLog(`Script loaded successfully: ${src}`);
+                } else {
+                    this.failed.push({src, error});
+                    console.error(`Script failed to load: ${src}`, error);
+                }
+            }
+        };
+
+        // Real credentials
+        const BRAINTREE_CONFIG = {
+            merchantId: '2yhrvbtjszdbvxtt',
+            publicKey: 'sgfjmfv929kzffsr',
+            privateKey: '4edc8a7489369f8e7d5cb8c9a8066c17',
+            environment: 'sandbox'
+        };
+
+        async function runDiagnosticTest() {
+            clearLog();
+            console.log('🔍 Starting DEEP DIAGNOSTIC Test...');
+            console.log('User Agent:', navigator.userAgent);
+            console.log('Browser Info:', {
+                name: navigator.appName,
+                version: navigator.appVersion,
+                platform: navigator.platform,
+                cookieEnabled: navigator.cookieEnabled,
+                onLine: navigator.onLine
+            });
+            
+            try {
+                // Step 1: Environment check
+                await environmentCheck();
+                
+                // Step 2: Get client token
+                const clientToken = await getBraintreeClientTokenDiagnostic();
+                
+                // Step 3: SDK loading with detailed diagnostics
+                await loadBraintreeSDKDiagnostic();
+                
+                // Step 4: Create Drop-in
+                await createDropinDiagnostic(clientToken);
+                
+                addToLog('✅ DIAGNOSTIC TEST PASSED!', 'success');
+            } catch (error) {
+                console.error('Diagnostic test failed:', error);
+                addToLog(`❌ Diagnostic test failed: ${error.message}`, 'error');
+                
+                // Additional error analysis
+                console.log('Error Analysis:');
+                console.log('- Error name:', error.name);
+                console.log('- Error message:', error.message);
+                console.log('- Error stack:', error.stack);
+                console.log('- Scripts loaded:', scriptLoadTracker.loaded);
+                console.log('- Scripts failed:', scriptLoadTracker.failed);
+            }
+        }
+
+        async function environmentCheck() {
+            console.log('🌍 Environment Check...');
+            
+            // Check if we can access external URLs
+            try {
+                const testResponse = await fetch('https://httpbin.org/json', {mode: 'cors'});
+                debugLog('External fetch test: SUCCESS');
+            } catch (error) {
+                console.warn('External fetch test failed:', error.message);
+            }
+            
+            // Check existing scripts
+            const existingScripts = Array.from(document.querySelectorAll('script[src]'));
+            debugLog(`Existing scripts: ${existingScripts.length}`);
+            existingScripts.forEach(script => {
+                debugLog(`  - ${script.src}`);
+            });
+            
+            // Check window object pollution
+            if (window.braintree) {
+                console.warn('window.braintree already exists:', Object.keys(window.braintree));
+            }
+            
+            debugLog('Environment check complete');
+        }
+
+        async function getBraintreeClientTokenDiagnostic() {
+            console.log('🎯 Getting Client Token with Enhanced Diagnostics...');
+            
+            try {
+                const credentials = btoa(`${BRAINTREE_CONFIG.publicKey}:${BRAINTREE_CONFIG.privateKey}`);
+                debugLog(`Credentials created: ${credentials.substring(0, 20)}...`);
+                
+                const requestBody = `<?xml version="1.0" encoding="UTF-8"?><client-token></client-token>`;
+                const apiUrl = `https://api.sandbox.braintreegateway.com/merchants/${BRAINTREE_CONFIG.merchantId}/client_token`;
+                
+                debugLog(`API URL: ${apiUrl}`);
+                debugLog(`Request body: ${requestBody}`);
+                
+                const startTime = Date.now();
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Basic ${credentials}`,
+                        'Content-Type': 'application/xml',
+                        'Accept': 'application/xml',
+                        'Braintree-Version': '2019-01-01'
+                    },
+                    body: requestBody
+                });
+                const endTime = Date.now();
+                
+                debugLog(`Request completed in ${endTime - startTime}ms`);
+                debugLog(`Response status: ${response.status} ${response.statusText}`);
+                debugLog(`Response headers: ${JSON.stringify(Object.fromEntries(response.headers.entries()))}`);
+                
+                const responseText = await response.text();
+                debugLog(`Response length: ${responseText.length} characters`);
+                
+                if (!response.ok) {
+                    throw new Error(`API error: ${response.status} - ${responseText}`);
+                }
+                
+                // Parse XML
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(responseText, 'text/xml');
+                
+                // Check for parse errors
+                const parseError = xmlDoc.querySelector('parsererror');
+                if (parseError) {
+                    throw new Error(`XML parse error: ${parseError.textContent}`);
+                }
+                
+                const clientTokenElement = xmlDoc.querySelector('client-token');
+                if (!clientTokenElement) {
+                    throw new Error('No client-token element found in XML');
+                }
+                
+                const clientToken = clientTokenElement.textContent.trim();
+                debugLog(`Client token extracted: ${clientToken.length} characters`);
+                debugLog(`Token preview: ${clientToken.substring(0, 50)}...`);
+                
+                return clientToken;
+                
+            } catch (error) {
+                console.error('Client token generation failed:', error);
+                throw error;
+            }
+        }
+
+        async function loadBraintreeSDKDiagnostic() {
+            console.log('📦 Loading Braintree SDK with Deep Diagnostics...');
+            
+            // Clean slate
+            const existingBraintreeScripts = document.querySelectorAll('script[src*="braintreegateway.com"]');
+            debugLog(`Removing ${existingBraintreeScripts.length} existing Braintree scripts`);
+            existingBraintreeScripts.forEach(script => script.remove());
+            
+            if (window.braintree) {
+                debugLog('Deleting existing window.braintree');
+                delete window.braintree;
+            }
+            
+            // Test multiple SDK versions
+            const sdkVersions = ['3.85.4', '3.97.2', '3.96.1', '3.95.0'];
+            
+            for (const version of sdkVersions) {
+                console.log(`🧪 Testing SDK version ${version}...`);
+                
+                try {
+                    await loadSDKVersion(version);
+                    console.log(`✅ SDK version ${version} loaded successfully!`);
+                    return; // Success - exit loop
+                } catch (error) {
+                    console.warn(`❌ SDK version ${version} failed:`, error.message);
+                    
+                    // Clean up failed attempt
+                    if (window.braintree) {
+                        delete window.braintree;
+                    }
+                    
+                    // Remove failed scripts
+                    const failedScripts = document.querySelectorAll(`script[src*="${version}"]`);
+                    failedScripts.forEach(script => script.remove());
+                }
+            }
+            
+            throw new Error('All SDK versions failed to load');
+        }
+
+        async function loadSDKVersion(version) {
+            debugLog(`Loading SDK version ${version}...`);
+            
+            // Load client SDK
+            await loadScript(`https://js.braintreegateway.com/web/${version}/js/client.min.js`, 'client');
+            
+            // Verify client loaded
+            if (!window.braintree) {
+                throw new Error('Braintree client not available after loading');
+            }
+            
+            debugLog(`Client SDK loaded. Available: ${Object.keys(window.braintree).join(', ')}`);
+            
+            // Wait for client to settle
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // Load dropin SDK
+            await loadScript(`https://js.braintreegateway.com/web/${version}/js/dropin.min.js`, 'dropin');
+            
+            // Verify dropin loaded
+            if (!window.braintree.dropin) {
+                throw new Error('Braintree dropin not available after loading');
+            }
+            
+            if (!window.braintree.dropin.create) {
+                throw new Error('Braintree dropin.create not available');
+            }
+            
+            debugLog(`Dropin SDK loaded. dropin.create type: ${typeof window.braintree.dropin.create}`);
+        }
+
+        async function loadScript(src, type) {
+            return new Promise((resolve, reject) => {
+                debugLog(`Loading ${type} script: ${src}`);
+                
+                const script = document.createElement('script');
+                script.src = src;
+                script.type = 'text/javascript';
+                
+                const timeout = setTimeout(() => {
+                    console.error(`${type} script load timeout after 10 seconds`);
+                    scriptLoadTracker.track(src, false, new Error('Timeout'));
+                    reject(new Error(`Script load timeout: ${src}`));
+                }, 10000);
+                
+                script.onload = () => {
+                    clearTimeout(timeout);
+                    debugLog(`${type} script loaded successfully`);
+                    scriptLoadTracker.track(src, true);
+                    resolve();
+                };
+                
+                script.onerror = (event) => {
+                    clearTimeout(timeout);
+                    const error = new Error(`Failed to load ${type} script: ${src}`);
+                    console.error(`${type} script error:`, {
+                        event: event,
+                        src: src,
+                        type: event.type,
+                        target: event.target,
+                        message: event.message || 'Unknown error'
+                    });
+                    scriptLoadTracker.track(src, false, error);
+                    reject(error);
+                };
+                
+                document.head.appendChild(script);
+                debugLog(`${type} script element added to DOM`);
+            });
+        }
+
+        async function createDropinDiagnostic(clientToken) {
+            console.log('🎨 Creating Drop-in with Enhanced Diagnostics...');
+            
+            try {
+                // Pre-creation verification
+                debugLog('Pre-creation verification:');
+                debugLog(`- window.braintree: ${!!window.braintree}`);
+                debugLog(`- window.braintree.dropin: ${!!window.braintree?.dropin}`);
+                debugLog(`- window.braintree.dropin.create: ${typeof window.braintree?.dropin?.create}`);
+                debugLog(`- Client token length: ${clientToken.length}`);
+                
+                // Prepare container
+                const container = document.getElementById('braintree-container');
+                container.innerHTML = '<h3>🔍 Braintree Drop-in Diagnostic Result</h3>';
+                
+                const dropinDiv = document.createElement('div');
+                dropinDiv.id = 'dropin-container-diagnostic';
+                dropinDiv.style.cssText = 'padding: 20px; border: 2px solid #4CAF50; border-radius: 8px; background: #f9f9f9; min-height: 250px;';
+                container.appendChild(dropinDiv);
+                
+                // Try basic configuration first
+                const basicConfig = {
+                    authorization: clientToken,
+                    container: '#dropin-container-diagnostic'
+                };
+                
+                debugLog('Creating dropin with config:', JSON.stringify(basicConfig, null, 2));
+                
+                const startTime = Date.now();
+                const dropinInstance = await window.braintree.dropin.create(basicConfig);
+                const endTime = Date.now();
+                
+                debugLog(`Drop-in created successfully in ${endTime - startTime}ms`);
+                debugLog(`Drop-in instance type: ${typeof dropinInstance}`);
+                debugLog(`Drop-in constructor: ${dropinInstance.constructor.name}`);
+                
+                // Test instance methods
+                const methods = Object.getOwnPropertyNames(Object.getPrototypeOf(dropinInstance));
+                debugLog(`Drop-in methods: ${methods.join(', ')}`);
+                
+                // Success message
+                const successMsg = document.createElement('div');
+                successMsg.innerHTML = `
+                    <div style="background: linear-gradient(135deg, #4CAF50, #45a049); color: white; padding: 20px; margin: 10px 0; border-radius: 8px;">
+                        🔍 <strong>DIAGNOSTIC SUCCESS!</strong><br>
+                        Drop-in created successfully with comprehensive diagnostics!<br>
+                        <br>
+                        ✅ Environment: VERIFIED<br>
+                        ✅ Client Token: VALID (${clientToken.length} chars)<br>
+                        ✅ SDK Loading: SUCCESSFUL<br>
+                        ✅ Drop-in Creation: SUCCESSFUL (${endTime - startTime}ms)<br>
+                        ✅ Instance Methods: ${methods.length} available<br>
+                    </div>
+                `;
+                container.appendChild(successMsg);
+                
+                return dropinInstance;
+                
+            } catch (error) {
+                console.error('Drop-in creation failed:', error);
+                debugLog('Drop-in creation error details:');
+                debugLog(`- Error name: ${error.name}`);
+                debugLog(`- Error message: ${error.message}`);
+                debugLog(`- Error stack: ${error.stack}`);
+                
+                // Check what's actually available
+                debugLog('Post-error state check:');
+                debugLog(`- window.braintree: ${typeof window.braintree}`);
+                if (window.braintree) {
+                    debugLog(`- braintree keys: ${Object.keys(window.braintree).join(', ')}`);
+                    if (window.braintree.dropin) {
+                        debugLog(`- dropin keys: ${Object.keys(window.braintree.dropin).join(', ')}`);
+                    }
+                }
+                
+                throw error;
+            }
+        }
+
+        async function testDirectCDN() {
+            clearLog();
+            console.log('📦 Testing Direct CDN Access...');
+            
+            const cdnUrls = [
+                'https://js.braintreegateway.com/web/3.85.4/js/client.min.js',
+                'https://js.braintreegateway.com/web/3.97.2/js/client.min.js',
+                'https://js.braintreegateway.com/web/3.96.1/js/client.min.js',
+                'https://js.braintreegateway.com/web/3.85.4/js/dropin.min.js',
+                'https://js.braintreegateway.com/web/3.97.2/js/dropin.min.js'
+            ];
+            
+            for (const url of cdnUrls) {
+                try {
+                    const startTime = Date.now();
+                    const response = await fetch(url, {method: 'HEAD'});
+                    const endTime = Date.now();
+                    
+                    if (response.ok) {
+                        console.log(`✅ ${url} - ${response.status} (${endTime - startTime}ms)`);
+                    } else {
+                        console.warn(`⚠️ ${url} - ${response.status} ${response.statusText}`);
+                    }
+                } catch (error) {
+                    console.error(`❌ ${url} - ${error.message}`);
+                }
+            }
+        }
+
+        // Initial message
+        console.log('🔍 Braintree Deep Diagnostic Test Loaded');
+        console.log('This version provides comprehensive SDK loading diagnostics');
+        console.log('Click "Run Deep Diagnostic" to start the comprehensive test');
+    </script>
+</body>
+</html>

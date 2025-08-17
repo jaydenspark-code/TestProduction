@@ -8,7 +8,7 @@ import { smartMatchingService } from '../services/smartMatchingService';
 import { personalizationService } from '../services/personalizationService';
 import { realtimeService } from '../services/realtimeService';
 import { aiInitializationService } from '../services/aiInitializationService';
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from "../lib/supabase";
 
 export interface TestResult {
   name: string;

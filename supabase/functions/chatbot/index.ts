@@ -34,7 +34,7 @@ class SmartEarnProChatbot {
     },
     'payments_withdrawal': {
       keywords: ['payment', 'withdraw', 'payout', 'money', 'earnings', 'frequency'],
-      response: 'Regular users: Weekly payouts. Agents: 2-3x weekly based on milestones. Multiple payment methods supported. Minimum withdrawal varies by country and payment method. All payments processed securely.',
+      response: 'All users receive daily payouts processed within 24 hours. Multiple payment methods supported including PayPal, bank transfer, and cryptocurrency. Minimum withdrawal varies by country and payment method. All payments processed securely.'
       suggestions: ['Payment methods', 'Withdrawal limits', 'Processing time', 'Agent benefits']
     },
     'registration_activation': {

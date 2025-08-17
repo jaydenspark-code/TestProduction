@@ -21,14 +21,13 @@ const TelegramTask: React.FC<TelegramTaskProps> = ({ task, onComplete }) => {
     }
   };
 
-  const handleVerifyJoin = async () => {
+  const handleVerifyJoin = () => {
     setIsVerifying(true);
-    
-    // Simulate verification process
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setIsVerifying(false);
-    onComplete(task.reward);
+    setTimeout(() => {
+      setIsVerifying(false);
+      setHasJoined(true);
+      onComplete(task.reward);
+    }, 2000);
   };
 
   return (

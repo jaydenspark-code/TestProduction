@@ -1,5 +1,5 @@
 import * as tf from '@tensorflow/tfjs';
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from "../lib/supabase";
 import _ from 'lodash';
 
 export interface UserProfile {
@@ -44,10 +44,28 @@ export interface CampaignOptimization {
 class SmartMatchingService {
   private matchingModel: tf.LayersModel | null = null;
   private userProfiles: Map<string, UserProfile> = new Map();
+  private isInitialized: boolean = false;
 
   constructor() {
-    this.initializeMatchingModel();
-    this.loadUserProfiles();
+    this.initialize();
+  }
+
+  private async initialize(): Promise<void> {
+    try {
+      await Promise.all([
+        this.initializeMatchingModel(),
+        this.loadUserProfiles()
+      ]);
+      this.isInitialized = true;
+      console.log('✅ Smart Matching Service initialized successfully');
+    } catch (error) {
+      console.error('❌ Failed to initialize Smart Matching Service:', error);
+      throw new Error('Smart Matching Service initialization failed');
+    }
+  }
+
+  public async isReady(): Promise<boolean> {
+    return this.isInitialized && this.matchingModel !== null;
   }
 
   /**
@@ -88,6 +106,12 @@ class SmartMatchingService {
    */
   async findOptimalMatches(targetUserId: string, limit = 10): Promise<MatchResult[]> {
     try {
+      // Handle null supabase case
+      if (!supabase) {
+        console.log('🧪 TESTING MODE: Returning mock matching results');
+        return this.getMockMatchResults(targetUserId, limit);
+      }
+
       const targetProfile = await this.getUserProfile(targetUserId);
       if (!targetProfile) throw new Error('Target user profile not found');
 
@@ -637,6 +661,48 @@ class SmartMatchingService {
       console.error('Error processing training data:', error);
       return null;
     }
+  }
+
+  // Mock method for testing mode
+  private getMockMatchResults(targetUserId: string, limit: number): MatchResult[] {
+    return [
+      {
+        referrerId: 'test-referrer-1',
+        targetUserId: targetUserId,
+        compatibilityScore: 0.87,
+        reasons: [
+          'Same geographical location',
+          '73% shared interests',
+          'High success rate referrer',
+          'Active on same social platforms'
+        ],
+        recommendedApproach: 'Visual content sharing on Instagram with personal story',
+        expectedConversion: 0.42
+      },
+      {
+        referrerId: 'test-referrer-2',
+        targetUserId: targetUserId,
+        compatibilityScore: 0.79,
+        reasons: [
+          '65% shared interests',
+          'Similar activity patterns',
+          'Active on same social platforms'
+        ],
+        recommendedApproach: 'Professional networking approach via LinkedIn',
+        expectedConversion: 0.38
+      },
+      {
+        referrerId: 'test-referrer-3',
+        targetUserId: targetUserId,
+        compatibilityScore: 0.71,
+        reasons: [
+          'High success rate referrer',
+          'Similar activity patterns'
+        ],
+        recommendedApproach: 'Direct message with personalized benefits explanation',
+        expectedConversion: 0.33
+      }
+    ].slice(0, limit);
   }
 }
 

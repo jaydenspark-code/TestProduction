@@ -4,6 +4,7 @@ import { useTheme } from '../../context/ThemeContext';
 import { Users, TrendingUp, DollarSign, Shield, Globe, Zap, CheckCircle, Star, Crown } from 'lucide-react';
 import EarnProLogo from '../Logo/EarnProLogo';
 import BackendConnectionTest from '../Backend/BackendConnectionTest';
+import ConfigurationStatus from '../Config/ConfigurationStatus';
 
 const HomePage: React.FC = () => {
   const { theme } = useTheme();

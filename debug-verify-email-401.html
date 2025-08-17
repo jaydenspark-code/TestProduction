@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Verify Email Function</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .test-result { margin: 10px 0; padding: 15px; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        button { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 5px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Debug Verify Email Function - 401 Error</h1>
+        
+        <div class="error">
+            <h3>❌ Current Issue: 401 Unauthorized</h3>
+            <p>The function is deployed but requires authentication. Email verification links should be publicly accessible.</p>
+        </div>
+
+        <div class="info">
+            <h3>🧪 Let's Test Different Approaches:</h3>
+        </div>
+
+        <button onclick="testWithAnonKey()">Test with Anon Key</button>
+        <button onclick="testWithServiceKey()">Test with Service Key</button>
+        <button onclick="testNoAuth()">Test Without Auth</button>
+        <button onclick="testPOST()">Test POST Method</button>
+
+        <div id="results"></div>
+
+        <div class="info">
+            <h3>🔧 Possible Solutions:</h3>
+            <ol>
+                <li><strong>Add anon key to headers</strong> - Most likely fix</li>
+                <li><strong>Configure function for public access</strong> - Supabase dashboard setting</li>
+                <li><strong>Update RLS policies</strong> - Database permission issue</li>
+                <li><strong>Use different authentication approach</strong> - Code modification</li>
+            </ol>
+        </div>
+
+        <div class="info">
+            <h3>📋 Function Details:</h3>
+            <ul>
+                <li><strong>URL:</strong> https://bmtaqilpuszwoshtizmq.supabase.co/functions/v1/verify-email</li>
+                <li><strong>Project:</strong> bmtaqilpuszwoshtizmq</li>
+                <li><strong>Expected Behavior:</strong> Public access for email verification</li>
+                <li><strong>Current Status:</strong> Deployed but requires auth</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJtdGFxaWxwdXN6d29zaHRpem1xIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjMyNDk2NDUsImV4cCI6MjAzODgyNTY0NX0.2qgGz3eMTaBz4qC_7vwWfp5RKQbKXxmF1BxCnMHIFj8';
+        const SERVICE_KEY = 'your-service-key-here'; // Don't expose this in real code
+        const BASE_URL = 'https://bmtaqilpuszwoshtizmq.supabase.co/functions/v1/verify-email?token=test';
+
+        function addResult(title, response, error = null) {
+            const resultsDiv = document.getElementById('results');
+            const className = error ? 'error' : (response.status === 200 ? 'success' : 'info');
+            const content = error ? error.message : `Status: ${response.status} ${response.statusText}`;
+            
+            resultsDiv.innerHTML += `
+                <div class="test-result ${className}">
+                    <h4>${title}</h4>
+                    <p>${content}</p>
+                    <pre>${error ? 'Error details: ' + error.toString() : 'Response: ' + JSON.stringify(response, null, 2)}</pre>
+                </div>
+            `;
+        }
+
+        async function testWithAnonKey() {
+            try {
+                const response = await fetch(BASE_URL, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${ANON_KEY}`,
+                        'apikey': ANON_KEY,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                addResult('✅ Test with Anon Key', response);
+            } catch (error) {
+                addResult('❌ Test with Anon Key', null, error);
+            }
+        }
+
+        async function testWithServiceKey() {
+            try {
+                const response = await fetch(BASE_URL, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${SERVICE_KEY}`,
+                        'apikey': SERVICE_KEY,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                addResult('🔑 Test with Service Key', response);
+            } catch (error) {
+                addResult('❌ Test with Service Key', null, error);
+            }
+        }
+
+        async function testNoAuth() {
+            try {
+                const response = await fetch(BASE_URL, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                addResult('🌐 Test without Auth', response);
+            } catch (error) {
+                addResult('❌ Test without Auth', null, error);
+            }
+        }
+
+        async function testPOST() {
+            try {
+                const response = await fetch(BASE_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${ANON_KEY}`,
+                        'apikey': ANON_KEY,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ token: 'test' })
+                });
+                addResult('📬 Test POST Method', response);
+            } catch (error) {
+                addResult('❌ Test POST Method', null, error);
+            }
+        }
+
+        // Auto-run the anon key test
+        window.onload = () => {
+            testWithAnonKey();
+        };
+    </script>
+</body>
+</html>

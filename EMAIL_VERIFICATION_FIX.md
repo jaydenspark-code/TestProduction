@@ -32,7 +32,7 @@
    SMTP Host: smtp.sendgrid.net
    SMTP Port: 587
    SMTP User: apikey
-   SMTP Pass: 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
+   SMTP Pass: [YOUR_SENDGRID_API_KEY_FROM_ENV_FILE]
    ```
 4. Set sender details:
    ```
