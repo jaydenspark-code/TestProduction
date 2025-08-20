@@ -24,52 +24,52 @@ const TasksPage: React.FC = () => {
     // Initialize comprehensive weekly tasks
     const weeklyTasks: Task[] = [
       // Monday Tasks (10 tasks)
-      { id: 'mon-1', title: 'Welcome to EarnPro', description: 'Watch our introduction video', type: 'video', reward: 2.50, duration: 180, url: 'https://example.com/intro', requiredWatchPercentage: 80, isCompleted: false, isLocked: false, dayOfWeek: 1, order: 1 },
+      { id: 'mon-1', title: 'Welcome to EarnPro', description: 'Watch our introduction video', type: 'video', reward: 2.50, duration: 180, url: 'https://www.youtube.com/watch?v=jq1qecZ7UNw', requiredWatchPercentage: 80, isCompleted: false, isLocked: false, dayOfWeek: 1, order: 1 },
       { id: 'mon-2', title: 'Join EarnPro Community', description: 'Join our official Telegram channel', type: 'telegram', reward: 1.50, url: 'https://t.me/earnpro_official', isCompleted: false, isLocked: true, dayOfWeek: 1, order: 2 },
-      { id: 'mon-3', title: 'Platform Overview', description: 'Learn about EarnPro features', type: 'video', reward: 3.00, duration: 240, url: 'https://example.com/overview', requiredWatchPercentage: 80, isCompleted: false, isLocked: true, dayOfWeek: 1, order: 3 },
+      { id: 'mon-3', title: 'Platform Overview', description: 'Learn about EarnPro features', type: 'video', reward: 3.00, duration: 240, url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4', requiredWatchPercentage: 80, isCompleted: false, isLocked: true, dayOfWeek: 1, order: 3 },
       { id: 'mon-4', title: 'Join Updates Channel', description: 'Stay updated with latest news', type: 'telegram', reward: 1.25, url: 'https://t.me/earnpro_updates', isCompleted: false, isLocked: true, dayOfWeek: 1, order: 4 },
-      { id: 'mon-5', title: 'Referral System Guide', description: 'Master the referral system', type: 'video', reward: 2.75, duration: 200, url: 'https://example.com/referrals', requiredWatchPercentage: 80, isCompleted: false, isLocked: true, dayOfWeek: 1, order: 5 },
+      { id: 'mon-5', title: 'Referral System Guide', description: 'Master the referral system', type: 'video', reward: 2.75, duration: 200, url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4', requiredWatchPercentage: 80, isCompleted: false, isLocked: true, dayOfWeek: 1, order: 5 },
       { id: 'mon-6', title: 'Success Stories Channel', description: 'Get inspired by success stories', type: 'telegram', reward: 1.75, url: 'https://t.me/earnpro_success', isCompleted: false, isLocked: true, dayOfWeek: 1, order: 6 },
-      { id: 'mon-7', title: 'Earning Strategies', description: 'Learn advanced earning techniques', type: 'video', reward: 3.25, duration: 300, url: 'https://example.com/strategies', requiredWatchPercentage: 80, isCompleted: false, isLocked: true, dayOfWeek: 1, order: 7 },
+      { id: 'mon-7', title: 'Earning Strategies', description: 'Learn advanced earning techniques', type: 'video', reward: 3.25, duration: 300, url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4', requiredWatchPercentage: 80, isCompleted: false, isLocked: true, dayOfWeek: 1, order: 7 },
       { id: 'mon-8', title: 'Support Channel', description: 'Join our support community', type: 'telegram', reward: 1.00, url: 'https://t.me/earnpro_support', isCompleted: false, isLocked: true, dayOfWeek: 1, order: 8 },
-      { id: 'mon-9', title: 'Payment Methods', description: 'Understand payment options', type: 'video', reward: 2.25, duration: 150, url: 'https://example.com/payments', requiredWatchPercentage: 80, isCompleted: false, isLocked: true, dayOfWeek: 1, order: 9 },
+      { id: 'mon-9', title: 'Payment Methods', description: 'Understand payment options', type: 'video', reward: 2.25, duration: 150, url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerFun.mp4', requiredWatchPercentage: 80, isCompleted: false, isLocked: true, dayOfWeek: 1, order: 9 },
       { id: 'mon-10', title: 'VIP Members Group', description: 'Join exclusive VIP group', type: 'telegram', reward: 2.00, url: 'https://t.me/earnpro_vip', isCompleted: false, isLocked: true, dayOfWeek: 1, order: 10 },
 
       // Tuesday Tasks (10 tasks)
-      { id: 'tue-1', title: 'Advanced Referrals', description: 'Multi-level referral strategies', type: 'video', reward: 3.50, duration: 280, url: 'https://example.com/advanced-ref', requiredWatchPercentage: 80, isCompleted: false, isLocked: false, dayOfWeek: 2, order: 1 },
+      { id: 'tue-1', title: 'Advanced Referrals', description: 'Multi-level referral strategies', type: 'video', reward: 3.50, duration: 280, url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerJoyrides.mp4', requiredWatchPercentage: 80, isCompleted: false, isLocked: false, dayOfWeek: 2, order: 1 },
       { id: 'tue-2', title: 'Marketing Tips Channel', description: 'Learn marketing techniques', type: 'telegram', reward: 1.75, url: 'https://t.me/earnpro_marketing', isCompleted: false, isLocked: true, dayOfWeek: 2, order: 2 },
-      { id: 'tue-3', title: 'Social Media Marketing', description: 'Leverage social platforms', type: 'video', reward: 3.00, duration: 220, url: 'https://example.com/social-marketing', requiredWatchPercentage: 80, isCompleted: false, isLocked: true, dayOfWeek: 2, order: 3 },
+      { id: 'tue-3', title: 'Social Media Marketing', description: 'Leverage social platforms', type: 'video', reward: 3.00, duration: 220, url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerMeltdowns.mp4', requiredWatchPercentage: 80, isCompleted: false, isLocked: true, dayOfWeek: 2, order: 3 },
       { id: 'tue-4', title: 'Global Community', description: 'Connect with worldwide users', type: 'telegram', reward: 1.50, url: 'https://t.me/earnpro_global', isCompleted: false, isLocked: true, dayOfWeek: 2, order: 4 },
-      { id: 'tue-5', title: 'Content Creation', description: 'Create engaging content', type: 'video', reward: 2.75, duration: 190, url: 'https://example.com/content', requiredWatchPercentage: 80, isCompleted: false, isLocked: true, dayOfWeek: 2, order: 5 },
+      { id: 'tue-5', title: 'Content Creation', description: 'Create engaging content', type: 'video', reward: 2.75, duration: 190, url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/Sintel.mp4', requiredWatchPercentage: 80, isCompleted: false, isLocked: true, dayOfWeek: 2, order: 5 },
       { id: 'tue-6', title: 'Creators Hub', description: 'Join content creators group', type: 'telegram', reward: 2.25, url: 'https://t.me/earnpro_creators', isCompleted: false, isLocked: true, dayOfWeek: 2, order: 6 },
-      { id: 'tue-7', title: 'Network Building', description: 'Build your professional network', type: 'video', reward: 3.25, duration: 260, url: 'https://example.com/networking', requiredWatchPercentage: 80, isCompleted: false, isLocked: true, dayOfWeek: 2, order: 7 },
+      { id: 'tue-7', title: 'Network Building', description: 'Build your professional network', type: 'video', reward: 3.25, duration: 260, url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/SubaruOutbackOnStreetAndDirt.mp4', requiredWatchPercentage: 80, isCompleted: false, isLocked: true, dayOfWeek: 2, order: 7 },
       { id: 'tue-8', title: 'Business Opportunities', description: 'Explore business channels', type: 'telegram', reward: 1.25, url: 'https://t.me/earnpro_business', isCompleted: false, isLocked: true, dayOfWeek: 2, order: 8 },
-      { id: 'tue-9', title: 'Analytics & Tracking', description: 'Track your performance', type: 'video', reward: 2.50, duration: 170, url: 'https://example.com/analytics', requiredWatchPercentage: 80, isCompleted: false, isLocked: true, dayOfWeek: 2, order: 9 },
+      { id: 'tue-9', title: 'Analytics & Tracking', description: 'Track your performance', type: 'video', reward: 2.50, duration: 170, url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/TearsOfSteel.mp4', requiredWatchPercentage: 80, isCompleted: false, isLocked: true, dayOfWeek: 2, order: 9 },
       { id: 'tue-10', title: 'Elite Members', description: 'Join elite performers group', type: 'telegram', reward: 2.75, url: 'https://t.me/earnpro_elite', isCompleted: false, isLocked: true, dayOfWeek: 2, order: 10 },
 
       // Continue pattern for other days...
       // Wednesday Tasks
-      { id: 'wed-1', title: 'Agent Program Deep Dive', description: 'Comprehensive agent training', type: 'video', reward: 4.00, duration: 320, url: 'https://example.com/agent-training', requiredWatchPercentage: 80, isCompleted: false, isLocked: false, dayOfWeek: 3, order: 1 },
+      { id: 'wed-1', title: 'Agent Program Deep Dive', description: 'Comprehensive agent training', type: 'video', reward: 4.00, duration: 320, url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/VolkswagenGTIReview.mp4', requiredWatchPercentage: 80, isCompleted: false, isLocked: false, dayOfWeek: 3, order: 1 },
       { id: 'wed-2', title: 'Agents Community', description: 'Connect with other agents', type: 'telegram', reward: 2.00, url: 'https://t.me/earnpro_agents', isCompleted: false, isLocked: true, dayOfWeek: 3, order: 2 },
       // Add more Wednesday tasks...
 
       // Thursday Tasks
-      { id: 'thu-1', title: 'Global Expansion', description: 'International opportunities', type: 'video', reward: 3.75, duration: 290, url: 'https://example.com/global', requiredWatchPercentage: 80, isCompleted: false, isLocked: false, dayOfWeek: 4, order: 1 },
+      { id: 'thu-1', title: 'Global Expansion', description: 'International opportunities', type: 'video', reward: 3.75, duration: 290, url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WeAreGoingOnBullrun.mp4', requiredWatchPercentage: 80, isCompleted: false, isLocked: false, dayOfWeek: 4, order: 1 },
       { id: 'thu-2', title: 'International Hub', description: 'Global community channel', type: 'telegram', reward: 1.75, url: 'https://t.me/earnpro_international', isCompleted: false, isLocked: true, dayOfWeek: 4, order: 2 },
       // Add more Thursday tasks...
 
       // Friday Tasks
-      { id: 'fri-1', title: 'Weekly Review', description: 'Analyze your weekly performance', type: 'video', reward: 3.00, duration: 200, url: 'https://example.com/weekly-review', requiredWatchPercentage: 80, isCompleted: false, isLocked: false, dayOfWeek: 5, order: 1 },
+      { id: 'fri-1', title: 'Weekly Review', description: 'Analyze your weekly performance', type: 'video', reward: 3.00, duration: 200, url: 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/WhatCarCanYouGetForAGrand.mp4', requiredWatchPercentage: 80, isCompleted: false, isLocked: false, dayOfWeek: 5, order: 1 },
       { id: 'fri-2', title: 'Weekend Warriors', description: 'Weekend earning strategies', type: 'telegram', reward: 2.50, url: 'https://t.me/earnpro_weekend', isCompleted: false, isLocked: true, dayOfWeek: 5, order: 2 },
       // Add more Friday tasks...
 
       // Saturday Tasks
-      { id: 'sat-1', title: 'Weekend Boost', description: 'Maximize weekend earnings', type: 'video', reward: 3.50, duration: 250, url: 'https://example.com/weekend-boost', requiredWatchPercentage: 80, isCompleted: false, isLocked: false, dayOfWeek: 6, order: 1 },
+      { id: 'sat-1', title: 'Weekend Boost', description: 'Maximize weekend earnings', type: 'video', reward: 3.50, duration: 250, url: 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_1mb.mp4', requiredWatchPercentage: 80, isCompleted: false, isLocked: false, dayOfWeek: 6, order: 1 },
       { id: 'sat-2', title: 'Saturday Special', description: 'Weekend exclusive content', type: 'telegram', reward: 2.25, url: 'https://t.me/earnpro_saturday', isCompleted: false, isLocked: true, dayOfWeek: 6, order: 2 },
       // Add more Saturday tasks...
 
       // Sunday Tasks
-      { id: 'sun-1', title: 'Week Preparation', description: 'Prepare for the upcoming week', type: 'video', reward: 2.75, duration: 180, url: 'https://example.com/week-prep', requiredWatchPercentage: 80, isCompleted: false, isLocked: false, dayOfWeek: 0, order: 1 },
+      { id: 'sun-1', title: 'Week Preparation', description: 'Prepare for the upcoming week', type: 'video', reward: 2.75, duration: 180, url: 'https://sample-videos.com/zip/10/mp4/SampleVideo_1280x720_2mb.mp4', requiredWatchPercentage: 80, isCompleted: false, isLocked: false, dayOfWeek: 0, order: 1 },
       { id: 'sun-2', title: 'Sunday Motivation', description: 'Motivational content channel', type: 'telegram', reward: 1.50, url: 'https://t.me/earnpro_motivation', isCompleted: false, isLocked: true, dayOfWeek: 0, order: 2 },
       // Add more Sunday tasks...
     ];
